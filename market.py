@@ -280,3 +280,26 @@ def stock_stats(px, ticker, benchmark=MARKET):
     return {'price': p.iloc[-1], 'as_of': p.index[-1], 'ret_1y': p.iloc[-1] / p.iloc[0] - 1, 'mkt_1y': m.iloc[-1] / m.iloc[0] - 1,
             'vol_1y': r.std() * np.sqrt(252), 'vol_30d': r.iloc[-21:].std() * np.sqrt(252),
             'max_dd': (p / p.cummax() - 1).min(), 'beta': r.cov(mr) / mr.var(), 'high': p.max(), 'low': p.min()}
+
+
+def call_reaction(ticker, call_date, sector=None):
+    """Market-adjusted reaction around one call, as plain numbers (same method as the Analyze page).
+
+    Returns a dict, or {'error': message} when prices cannot be used. Nothing is rendered here.
+    """
+    if not ticker or not call_date:
+        return {'error': 'Enter the ticker and call date in the left panel to see how the stock reacted.'}
+    pt = resolve_ticker(ticker) or ticker
+    mkt, mkt_label = benchmark_for(pt)
+    start = (pd.Timestamp(call_date) - pd.Timedelta(days=220)).strftime('%Y-%m-%d')
+    end = min(pd.Timestamp(call_date) + pd.Timedelta(days=50), pd.Timestamp.today()).strftime('%Y-%m-%d')
+    px, source = prices((pt, mkt), start, end)
+    ev = event_window(px, pt, call_date, mkt) if px is not None else None
+    if ev is None:
+        return {'error': f'Price data for {ticker} could not be loaded ({source or "no source"}).'}
+    day = car(ev, 0, 1)
+    sd, n, _ = estimation_sd(px, pt, call_date, mkt)
+    t = day / (sd * np.sqrt(2)) if np.isfinite(day) and sd and sd > 0 else np.nan
+    return {'symbol': pt, 'market': mkt, 'market_label': mkt_label, 'source': source,
+            'pre': car(ev, -21, -1), 'day': day, 'week': car(ev, 0, 5), 'month': car(ev, 0, 21),
+            't': t, 'size': abs(t) if np.isfinite(t) else np.nan}

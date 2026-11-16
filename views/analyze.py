@@ -121,6 +121,23 @@ if sector_choice == 'Auto-detect' and sector is None:
 if fmt.startswith('Plain'):
     ui.warn('Speakers could not be identified in this text, so analyst questions and management answers cannot be separated. The overall tone is still valid; the Q&A measures are limited.')
 
+mode = st.segmented_control('View', ['Story mode', 'Full analysis'], default='Story mode', key='view_mode',
+                            help='Story mode tells what happened on the call in plain language. Full analysis shows every number, chart and the method.')
+if mode != 'Full analysis':
+    import call_story
+    import features
+    with st.spinner('Checking how the stock reacted...'):
+        story_reaction = mk.call_reaction(ticker, call_date, detected)
+    call_story.render(company=company, ticker=ticker, call_date=call_date, scored=scored, res=res, peers=peers, peer_word=peer_word,
+                      lm=da.lm(), neutral=sc.neutral_terms(lexicon, lex_sector), reaction=story_reaction)
+    if features.SHOW_PROF_MEHMET:
+        import prof_mehmet
+        prof_mehmet.render(res, peer_word, lex_sector,
+                           None if 'error' in story_reaction else {k: story_reaction[k] for k in ('day', 'pre', 'week', 'size')})
+    ui.references()
+    ui.footer()
+    st.stop()
+
 pct = (peers['composite'] < res['composite']).mean()
 color = ui.SIGNAL_COLORS[res['signal']]
 reading = {'Positive': 'Management sounds clearly more upbeat than most calls.',

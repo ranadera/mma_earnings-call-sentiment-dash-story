@@ -7,7 +7,11 @@
 >   short answer, what we listened to, script vs. live Q&A, banks vs. tech language, did the market listen, can you trade it, and what it means.
 >   **Every headline, number and verdict is computed from `data/` when the page loads**; nothing is typed in by hand. If the data cannot support a
 >   claim (too few calls, no prices, model not trained), the chapter says so instead.
-> - **Try it:** *Analyze a call*, unchanged from version 1 (including the optional Prof. Mehmet bonus, switched in `features.py`).
+> - **Try it:** *Analyze a call* opens in **Story mode** (`call_story.py`): the uploaded call told in plain language — a one-sentence summary,
+>   what happened (words, speakers, questions), the most upbeat and most cautious management sentences quoted word for word from the file,
+>   the overall mood against peers, script vs. live Q&A, what analysts pushed on (with the toughest question), how the stock reacted, and three
+>   takeaways. Every sentence is a fixed template filled with computed numbers; no AI writes it. A switch at the top shows the **Full analysis**,
+>   unchanged from version 1. Prof. Mehmet's bonus take (switch in `features.py`) appears in both views.
 > - **Details:** every version 1 page (Overview, Benchmark explorer, Market reaction, Stock reports, Method & decisions), unchanged.
 > - **Data updates:** the private transcripts workflow publishes the same derived scores to both repositories, so the two apps always show the same numbers.
 > - **Link back to version 1:** set `V1_APP_URL` in `features.py`.
