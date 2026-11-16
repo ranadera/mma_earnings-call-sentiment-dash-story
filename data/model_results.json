@@ -1,0 +1,20 @@
+{
+  "status": "ok",
+  "train_years": [
+    2024
+  ],
+  "test_year": 2026,
+  "later_years": [],
+  "targets": {
+    "car_day": {
+      "label": "Reaction: beats the market over days 0 to +1",
+      "status": "not enough calls (train 1, test 21)"
+    },
+    "car_drift": {
+      "label": "Drift: beats the market from day +2 to +21 (tradable after the call)",
+      "status": "not enough calls (train 1, test 21)"
+    }
+  },
+  "updated": "2026-11-16 02:33 UTC",
+  "calls": 22
+}

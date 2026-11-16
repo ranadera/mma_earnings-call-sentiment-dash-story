@@ -1,0 +1,12 @@
+sector,term,reason
+All,closed,"Deals, quarters and acquisitions are 'closed' (completed), not shut down"
+All,closing,"'Closing' a deal or an acquisition is neutral"
+All,against,"Mostly comparisons ('against last year'), not conflict"
+Tech,critical,"'Mission-critical' and 'critical infrastructure' describe importance, not risk"
+Tech,conviction,"'High conviction' signals confidence; the dictionary lists it because of criminal convictions"
+Tech,bridge,"A technology or product 'bridge', not a bridge loan"
+Bank,stress,"'Stress test' and 'stress capital buffer' are routine regulatory terms"
+Bank,volatility,"Market volatility drives trading revenue and is routine market commentary"
+Bank,unemployment,"An economic assumption in loan-loss models, not news about the bank"
+Bank,credit losses,"'Provision for credit losses' is a standard accounting line"
+Bank,credit loss,"'Credit loss' reserves are a standard accounting line"

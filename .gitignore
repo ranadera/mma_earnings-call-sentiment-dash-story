@@ -1,0 +1,15 @@
+# Licensed transcripts and derived text must not be published
+transcripts/
+*.pdf
+turn_sentiment.csv
+LM_MasterDictionary.csv
+# Market data caches
+/prices.csv
+report_prices.csv
+company_info.json
+bloomberg_inputs.csv
+reports/
+# Python
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
