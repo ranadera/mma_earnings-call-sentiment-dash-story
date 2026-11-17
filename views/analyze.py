@@ -35,7 +35,7 @@ def detect_meta(name, data):
 
 
 ui.hero('Analyze a call', 'Score any earnings call in seconds',
-        'Upload a transcript (Bloomberg or LSEG PDF) or paste the text of any earnings call. The app splits it into the scripted '
+        'Upload a transcript (Bloomberg, LSEG or company investor-relations PDF) or paste the text of any earnings call. The app splits it into the scripted '
         'presentation and the live Q&amp;A, measures the tone of each part, compares it with its sector, and shows how the stock moved around the call.')
 
 with st.sidebar:
@@ -76,7 +76,7 @@ with st.sidebar:
 if data is None:
     ui.coverage_banner(bench, calibrated, counts)
     st.markdown("""<div class="qm-empty">""" + ui.icon("upload_file") + """
-<h3>Start with a transcript</h3><p>Use the panel on the left to upload a Bloomberg or LSEG PDF, or paste the text of any earnings call.</p></div>""",
+<h3>Start with a transcript</h3><p>Use the panel on the left to upload a Bloomberg, LSEG or company investor-relations PDF, or paste the text of any earnings call.</p></div>""",
                 unsafe_allow_html=True)
     st.markdown(f"""<div class="qm-steps">
 <div class="qm-step"><span class="n">1 · READ</span><h5>Split the call</h5><p>{term("Prepared presentation", "Prepared presentation")}, analyst questions and management answers.</p></div>
@@ -169,7 +169,7 @@ if fin(res['tone_shift']):
                   f'({res["qa_mgmt_tone"]:.2f}). For comparison, tone fell in {fell_share:.0%} of {esc(peer_word)}.{hedge}'))
 else:
     takes.append(('Script vs. live answers', 'Speakers could not be identified, so the scripted remarks and live answers cannot be compared. '
-                  'Use a Bloomberg or LSEG transcript for this measure.'))
+                  'Use a Bloomberg, LSEG or investor-relations transcript for this measure.'))
 if fin(res['analyst_neg_rate']):
     a_avg = peers['analyst_neg_rate'].mean()
     tough = res['analyst_neg_rate'] > a_avg
@@ -303,7 +303,7 @@ with right:
         if not worst.empty:
             st.caption(f'Toughest question: exchange {int(worst["exchange"].iloc[0])} ({worst["analyst"].iloc[0]}). Hover over a point for the details.')
     else:
-        ui.note('The question-by-question view needs a transcript with speaker labels (Bloomberg or LSEG format).')
+        ui.note('The question-by-question view needs a transcript with speaker labels (Bloomberg, LSEG or investor-relations format).')
 
 ui.section('C · IN CONTEXT', 'Where this call sits among the benchmark',
            f'Every grey dot is a benchmark call; the blue diamond is this call. Dashed lines split the benchmark into Negative, Neutral and Positive thirds.')
