@@ -57,13 +57,21 @@ SEPARATOR_RE = re.compile(r'^\.{10,}$')
 TITLE_RE = re.compile(r'^(?P<title>[^,]{2,90}),\s*(?P<firm>.+?)(?:\s+(?P<qa>[QA]))?$')
 
 
+CS_HEADINGS = {'MANAGEMENTDISCUSSIONSECTION': 'MANAGEMENT DISCUSSION SECTION', 'QUESTIONANDANSWERSECTION': 'QUESTION AND ANSWER SECTION'}
+
+
+def _cs_heading(l):
+    return CS_HEADINGS.get(l.replace(' ', ''), l)
+
+
 def is_callstreet(lines):
-    return 'QUESTION AND ANSWER SECTION' in lines or 'MANAGEMENT DISCUSSION SECTION' in lines
+    return any(l.replace(' ', '') in CS_HEADINGS for l in lines)
 
 
 def parse_callstreet(lines):
     """Transcripts in the CallStreet/FactSet layout used on many investor-relations sites: a dotted rule, the speaker's
     name on one line, 'Title, Company' on the next (with Q or A in the Q&A), then the text. Operator lines are inline."""
+    lines = [_cs_heading(l) for l in lines]
     out, section, speaker, role, buf = [], 'presentation', None, None, []
     after_rule = False
 
@@ -264,7 +272,7 @@ def parse_plain(lines):
 
 LABEL_RE = re.compile(r"^(?P<name>OPERATOR|[A-Z][A-Z.'\-]+(?: [A-Z][A-Z.'\-]+){1,4}):\s*(?P<text>.*)$")
 QUESTION_RE = re.compile(r'(first|next|following|last) question|question (comes|will come|is from|today)', re.I)
-END_RE = re.compile(r'^(Certain statements in this|Forward[- ]Looking Statements|Disclaimer\b|IMPORTANT DISCLOSURES)', re.I)
+END_RE = re.compile(r'^(Certain statements in this (transcript|document)|(Forward[- ]Looking Statements|FORWARD[- ]LOOKING STATEMENTS|Disclaimer|DISCLAIMER|IMPORTANT DISCLOSURES)\s*$)')
 
 
 def is_caps_labels(lines):
