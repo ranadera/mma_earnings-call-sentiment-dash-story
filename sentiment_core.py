@@ -439,6 +439,9 @@ def score_turns(turns, lm, neutral=None):
     turns = turns.copy()
     turns['clean'] = turns['text'].apply(drop_boilerplate)
     turns = turns[(turns['role'] != 'operator') & (turns['clean'].str.split().str.len() > 0)].reset_index(drop=True)
+    if turns.empty:  # no readable text (e.g. a scanned PDF): return an empty table with the usual columns
+        cols = ['n_words', 'lm_pos', 'lm_neg', 'lm_unc', 'pos_words', 'neg_words', 'adj_pos', 'adj_neg', 'n_sent', 'vader', 'textblob', 'part']
+        return turns.assign(**{c: pd.Series(dtype=object if c in ('pos_words', 'neg_words', 'part') else float) for c in cols})
     counts = pd.DataFrame([lm_counts(t, lm) for t in turns['clean']])
     turns = pd.concat([turns, counts], axis=1)
     if neutral is not None:

@@ -97,7 +97,9 @@ lex_sector = sector or detected
 
 meta, fmt, scored, segs, qa_start = analyse(name, data, lex_sector)
 if scored.empty or scored['n_words'].sum() < 200:
-    ui.warn('Not enough text could be read from this file. If it is a scanned PDF, it needs text recognition (OCR) first.')
+    ui.warn('<b>No readable text in this file.</b> It looks like a scanned PDF (pictures of pages rather than text), '
+            'so there are no words to score. Please use the text version of the transcript (from Bloomberg, LSEG or the '
+            'company\'s investor-relations site), or run the PDF through text recognition (OCR) first.')
     st.stop()
 
 res = sc.score_call(scored, bench, sector)
