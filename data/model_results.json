@@ -1,6 +1,7 @@
 {
   "status": "ok",
   "train_years": [
+    2022,
     2023
   ],
   "test_year": 2024,
@@ -11,13 +12,47 @@
   "targets": {
     "car_day": {
       "label": "Reaction: beats the market over days 0 to +1",
-      "status": "not enough calls (train 7, test 10)"
+      "status": "ok",
+      "n_train": 27,
+      "n_test": 24,
+      "accuracy": 0.2916666666666667,
+      "baseline_accuracy": 0.6296296296296297,
+      "auc": 0.36363636363636365,
+      "long_short": -0.03786950520006449,
+      "coefficients": {
+        "lm_tone": -0.016350005206694843,
+        "lm_tone_sector": -0.3087518227495014,
+        "composite": 0.2595786858031202,
+        "tone_shift": -0.07894285737953771,
+        "conviction_score": -0.48711205058843854,
+        "analyst_neg_rate": 0.5217618387519181,
+        "hedging": 0.29026970932893376
+      },
+      "later_accuracy": 0.5,
+      "n_later": 26
     },
     "car_drift": {
       "label": "Drift: beats the market from day +2 to +21 (tradable after the call)",
-      "status": "not enough calls (train 7, test 10)"
+      "status": "ok",
+      "n_train": 27,
+      "n_test": 24,
+      "accuracy": 0.5416666666666666,
+      "baseline_accuracy": 0.5925925925925926,
+      "auc": 0.40559440559440557,
+      "long_short": -0.049450770006481015,
+      "coefficients": {
+        "lm_tone": 0.1801658415667278,
+        "lm_tone_sector": 0.07933481610234645,
+        "composite": 0.355511655794867,
+        "tone_shift": -0.236690131155973,
+        "conviction_score": 0.29766265489806376,
+        "analyst_neg_rate": -0.3154303324439562,
+        "hedging": 0.209507118022403
+      },
+      "later_accuracy": 0.46153846153846156,
+      "n_later": 26
     }
   },
-  "updated": "2026-11-17 03:35 UTC",
-  "calls": 42
+  "updated": "2026-11-17 03:54 UTC",
+  "calls": 77
 }
