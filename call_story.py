@@ -83,7 +83,7 @@ def _percentile_words(p):
             'one of the most cautious calls in our benchmark')
 
 
-def render(*, company, ticker, call_date, scored, res, peers, peer_word, lm, neutral, reaction):
+def render(*, company, ticker, call_date, scored, res, peers, peer_word, lm, neutral, reaction, market_section=None):
     """reaction: dict from market.call_reaction (may contain 'error')."""
     st.markdown(CSS, unsafe_allow_html=True)
     st.session_state['_cs_n'] = 0
@@ -93,7 +93,7 @@ def render(*, company, ticker, call_date, scored, res, peers, peer_word, lm, neu
     shift = res.get('tone_shift')
     held = _ok(shift) and shift >= 0
     has_qa = (scored['part'] != 'presentation').any()
-    r = reaction or {}
+    r = dict(reaction or {})
     has_px = 'error' not in r and _ok(r.get('day'))
 
     # ---- one-sentence headline, built from the parts below
@@ -184,33 +184,13 @@ def render(*, company, ticker, call_date, scored, res, peers, peer_word, lm, neu
                         f'<div class="k">THE TOUGHEST QUESTION</div><blockquote>“{esc(_trim(best))}”</blockquote>'
                         f'<div class="who">{esc(toughest["speaker"] or "Analyst")}</div></div></div>', unsafe_allow_html=True)
 
-    # ---- 6. the market
-    _ch('6 · THE MARKET', 'How the stock reacted' if has_px else 'How the stock reacted: not available',
-        '' if has_px else esc(r.get('error') or 'The call is too recent: at least two trading days after the call are needed.'))
-    if has_px:
-        lbl = r['market_label']
-        nums = [('Month before the call', r['pre'], 'Was the stock already moving?'),
-                ('Call day and next day', r['day'], 'The reaction to the call'),
-                ('Month after the call', r['month'], 'Did it last?')]
-        st.markdown('<div class="cs-num">' + ''.join(
-            f'<div><div class="v" style="color:{ui.MUTED if not _ok(v) else ui.OLIVE if v >= 0 else ui.ROSE}">'
-            f'{f"{v:+.1%}" if _ok(v) else "n/a"}</div><div class="l"><b>{l}</b><br>{n}</div></div>' for l, v, n in nums)
-            + '</div>', unsafe_allow_html=True)
-        st.caption(f'Each number is the stock\'s move minus the {lbl}\'s move over the same days, so a market-wide rally or sell-off is not '
-                   f'credited to the call. Prices: {r["source"]}.')
-        big = _ok(r['size']) and r['size'] >= 1.96
-        match = (signal == 'Positive' and r['day'] >= 0) or (signal == 'Negative' and r['day'] < 0)
-        if not big:
-            verdict = ('The move was within the stock\'s normal day-to-day swings, so we cannot say the call itself moved the stock.')
-        elif signal == 'Neutral':
-            verdict = 'The move was unusually large, but the call\'s tone was neutral, so the tone does not explain it.'
-        elif match:
-            verdict = (f'The move was unusually large <b>and went the way the {mood} tone suggested</b>. The call and the market reaction agree, '
-                       'though other news from the same day (such as the earnings numbers) may also have played a part.')
-        else:
-            verdict = (f'The move was unusually large <b>but went the opposite way</b> from what the {mood} tone suggested. Investors were '
-                       'reacting to something other than the tone, such as the numbers or guidance.')
-        ui.note(f'<b>Our read:</b> {verdict}')
+    # ---- 6. the market: the full event study, same as in Full analysis (the core deliverable)
+    _ch('6 · THE MARKET', 'How the stock moved around this call',
+        'Did investors react to this call? We compare the stock with the market from a month before to a month after the call, '
+        'test whether the move was unusual for this stock, and check whether it went the way the tone suggested.')
+    shown = market_section(show_header=False) if market_section else None
+    if shown:
+        r.update(shown)
 
     # ---- 7. bottom line
     _ch('7 · THE BOTTOM LINE', 'What to take away')
