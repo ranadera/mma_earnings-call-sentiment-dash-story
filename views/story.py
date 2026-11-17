@@ -260,8 +260,12 @@ mr = da.model_results() or {}
 trained = mr.get('status') == 'ok' and any(t.get('status') == 'ok' for t in mr.get('targets', {}).values())
 pos, neg = data[data['signal'] == 'Positive']['car_drift'].dropna(), data[data['signal'] == 'Negative']['car_drift'].dropna()
 ls = pos.mean() - neg.mean() if len(pos) and len(neg) else float('nan')
+model_lift = (max(t['accuracy'] - t['baseline_accuracy'] for t in mr['targets'].values() if t.get('status') == 'ok')
+              if trained else float('nan'))
+# "early signs" only when BOTH the simple long-short and the out-of-sample model beat their baselines
+edge = trained and ls > 0 and model_lift > 0
 chapter('trade', 'CHAPTER 5',
-        'Can you trade it? Not yet' if not (trained and ls > 0) else 'Can you trade it? There are early signs',
+        ('Can you trade it? There are early signs' if edge else 'Can you trade it? Not on tone alone' if trained else 'Can you trade it? Not yet'),
         'The real test for an investor: if you only act <b>after</b> the call is over, is there anything left to earn? We bought the upbeat calls '
         'and sold the cautious ones from the second day after the call to about a month later (days +2 to +21).')
 c1, c2 = st.columns(2)
@@ -284,7 +288,7 @@ with c2:
                'A fair test needs one year of calls to learn from and a later year to test on. It trains itself once the '
                '2023–2024 transcripts are loaded.', color=ui.PUMPKIN)
 so_what('By the time an investor can act, most of the reaction has already happened. Any edge from tone alone is small and not yet '
-        'proven, so treat it as research, not a strategy.' if not (trained and ls > 0) else
+        'proven, so treat it as research, not a strategy.' if not edge else
         'There is a hint of an edge after the call, but it needs more years of data and trading costs before anyone should rely on it.')
 
 # ---------------------------------------------------------------- 6. what it means
