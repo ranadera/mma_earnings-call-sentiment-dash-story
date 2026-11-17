@@ -186,9 +186,11 @@ def get_meta(raw):
                 meta['company'] = meta['company'] or name.strip()
                 break
     if not meta['call_date']:
-        d = re.search(rf'({MONTHS})\s+(\d{{1,2}}),\s+(\d{{4}})', raw[:3000])
+        d = re.search(rf'({MONTHS})\s+(\d{{1,2}})(?:st|nd|rd|th)?,\s+(\d{{4}})', raw[:3000])
         if d:
             meta['call_date'] = pd.to_datetime(' '.join(d.groups())).strftime('%Y-%m-%d')
+    if meta['company']:
+        meta['company'] = re.sub(r'\s+(first|second|third|fourth)\s+quarter.*$', '', meta['company'], flags=re.I).strip()
     return meta
 
 
@@ -320,6 +322,51 @@ def parse_caps_labels(lines):
     return out
 
 
+NAME_LABEL_RE = re.compile(r"^(?P<name>Operator|[A-Z][\w.'\u2019\-]+(?: [A-Z][\w.'\u2019\-]+){1,3}):\s*(?P<text>.*)$")
+NAME_TITLE_RE = re.compile(r"^(?P<name>[A-Z][\w.'\u2019\-]+(?: [A-Z][\w.'\u2019\-]+){1,3}),\s*(?P<title>[A-Z][\w ,&./\-]{1,60})$")
+
+
+def is_name_labels(lines):
+    labels = [m.group('name') for l in lines for m in [NAME_LABEL_RE.match(l)] if m]
+    return 'Operator' in labels and len(set(labels)) >= 3 and len(labels) >= 8
+
+
+def parse_name_labels(lines):
+    """Company-published transcripts (e.g. Meta): prepared remarks under 'Name, Title' lines, then a Q&A where each
+    turn starts 'Name: text'. Management = the 'Name, Title' speakers; everyone else in the Q&A except the operator is an analyst."""
+    mgmt = {m.group('name') for l in lines for m in [NAME_TITLE_RE.match(l)] if m and len(l) < 70}
+    out, section, speaker, role, buf = [], 'presentation', None, None, []
+
+    def flush():
+        if speaker and buf:
+            out.append([section, speaker, role, ' '.join(buf)])
+
+    for l in lines:
+        if END_RE.match(l) or l.isdigit():
+            if END_RE.match(l):
+                break
+            continue
+        t = NAME_TITLE_RE.match(l) if section == 'presentation' and len(l) < 70 else None
+        m = NAME_LABEL_RE.match(l)
+        if t:
+            flush(); speaker, role, buf = t.group('name'), 'management', []
+        elif m and (m.group('name') == 'Operator' or section == 'qa' or m.group('name') in mgmt):
+            flush()
+            name = m.group('name')
+            if name == 'Operator':
+                section, speaker, role = ('qa' if out else section), 'Operator', 'operator'
+            else:
+                section = 'qa'
+                speaker, role = name, ('management' if name in mgmt else 'analyst')
+            buf = [m.group('text')]
+        elif speaker:
+            buf.append(l)
+        elif l and not out and not speaker and NAME_TITLE_RE.match(l) is None:
+            continue
+    flush()
+    return out
+
+
 def parse(raw):
     lines = clean_lines(raw)
     if 'CORPORATE SPEAKERS:' in lines and 'PRESENTATION:' in lines:
@@ -332,6 +379,8 @@ def parse(raw):
         fmt, rows = 'Investor-relations (CallStreet layout)', parse_callstreet(lines)
     elif is_caps_labels(lines) and parse_caps_labels(lines):
         fmt, rows = 'Investor-relations (named speakers)', parse_caps_labels(lines)
+    elif is_name_labels(lines) and parse_name_labels(lines):
+        fmt, rows = 'Investor-relations (name: text)', parse_name_labels(lines)
     else:
         fmt, rows = 'Plain text (speakers not identified)', parse_plain(lines)
     turns = pd.DataFrame(rows, columns=['section', 'speaker', 'role', 'text'])
