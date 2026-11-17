@@ -262,6 +262,56 @@ def parse_plain(lines):
     return [['presentation', 'Full text', 'management', text.replace('\n', ' ')]]
 
 
+LABEL_RE = re.compile(r"^(?P<name>OPERATOR|[A-Z][A-Z.'\-]+(?: [A-Z][A-Z.'\-]+){1,4}):\s*(?P<text>.*)$")
+QUESTION_RE = re.compile(r'(first|next|following|last) question|question (comes|will come|is from|today)', re.I)
+END_RE = re.compile(r'^(Certain statements in this|Forward[- ]Looking Statements|Disclaimer\b|IMPORTANT DISCLOSURES)', re.I)
+
+
+def is_caps_labels(lines):
+    labels = [m.group('name') for l in lines for m in [LABEL_RE.match(l)] if m]
+    return 'OPERATOR' in labels and len(set(labels)) >= 3 and len(labels) >= 8
+
+
+def parse_caps_labels(lines):
+    """Company-published transcripts where each turn starts 'JANE FRASER: ...' (e.g. Citi). Management is taken from the
+    header ('Host' / 'Speakers' lists) and anyone who speaks before the first analyst; page headers repeated on every page are dropped."""
+    from collections import Counter
+    counts = Counter(lines)
+    body = [l for l in lines if not (counts[l] >= 3 and len(l) < 100) and not l.lower().startswith('copyright')]
+    first = next((i for i, l in enumerate(body) if LABEL_RE.match(l)), 0)
+    mgmt = {re.split(r',', l)[0].strip().upper() for l in body[:first] if ',' in l and len(l.split(',')[0].split()) in (2, 3, 4)}
+    out, section, speaker, role, buf, qa_started = [], 'presentation', None, None, [], False
+
+    def flush():
+        if speaker and buf:
+            out.append([section, speaker, role, ' '.join(buf)])
+
+    for l in body[first:]:
+        if END_RE.match(l):
+            break
+        m = LABEL_RE.match(l)
+        if m:
+            flush()
+            name = m.group('name').strip()
+            if name == 'OPERATOR':
+                speaker, role = 'Operator', 'operator'
+            else:
+                asked = bool(out and out[-1][1] == 'Operator' and QUESTION_RE.search(out[-1][3]))
+                is_mgmt = name in mgmt or (not qa_started and not asked)
+                if not is_mgmt and not qa_started:
+                    qa_started, section = True, 'qa'
+                    if out and out[-1][1] == 'Operator':
+                        out[-1][0] = 'qa'
+                if is_mgmt and name not in mgmt and not qa_started:
+                    mgmt.add(name)
+                speaker, role = name.title(), 'management' if (name in mgmt) else 'analyst'
+            buf = [m.group('text')]
+        elif speaker:
+            buf.append(l)
+    flush()
+    return out
+
+
 def parse(raw):
     lines = clean_lines(raw)
     if 'CORPORATE SPEAKERS:' in lines and 'PRESENTATION:' in lines:
@@ -272,6 +322,8 @@ def parse(raw):
         fmt, rows = 'Bloomberg', parse_bloomberg(lines)
     elif is_callstreet(lines) and parse_callstreet(lines):
         fmt, rows = 'Investor-relations (CallStreet layout)', parse_callstreet(lines)
+    elif is_caps_labels(lines) and parse_caps_labels(lines):
+        fmt, rows = 'Investor-relations (named speakers)', parse_caps_labels(lines)
     else:
         fmt, rows = 'Plain text (speakers not identified)', parse_plain(lines)
     turns = pd.DataFrame(rows, columns=['section', 'speaker', 'role', 'text'])
