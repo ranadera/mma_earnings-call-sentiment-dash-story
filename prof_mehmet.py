@@ -5,6 +5,8 @@ To switch it off, set SHOW_PROF_MEHMET = False in features.py.
 To remove it completely, delete this file, features.py and the marked block at the end of views/analyze.py.
 """
 import numpy as np
+
+import features
 import streamlit as st
 
 import ui
@@ -155,7 +157,7 @@ def render(res, peer_word, sector, reaction):
             pre, week = reaction.get('pre', np.nan), reaction.get('week', np.nan)
             if np.isfinite(pre) and abs(pre) > 0.03:
                 cond.append(rng.choice([
-                    f'The stock had already moved <b>{pre:+.1%}</b> against the market in the month before the call. Was the market reading the transcript, or had it already priced in the news?',
+                    f'The stock had already moved <b>{pre:+.1%}</b> against the market in the ' + features.pre_window_label() + ' the call. Was the market reading the transcript, or had it already priced in the news?',
                     f'A <b>{pre:+.1%}</b> run against the market <i>before</i> the call. Some of the news was probably in the price already; the call may only have confirmed it.']))
             if np.isfinite(week):
                 if np.sign(week) != np.sign(day):

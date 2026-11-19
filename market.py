@@ -9,6 +9,8 @@ import time
 import numpy as np
 import pandas as pd
 import streamlit as st
+
+import features
 from scipy import stats
 
 MARKET = 'SPY'
@@ -301,5 +303,5 @@ def call_reaction(ticker, call_date, sector=None):
     sd, n, _ = estimation_sd(px, pt, call_date, mkt)
     t = day / (sd * np.sqrt(2)) if np.isfinite(day) and sd and sd > 0 else np.nan
     return {'symbol': pt, 'market': mkt, 'market_label': mkt_label, 'source': source,
-            'pre': car(ev, -21, -1), 'day': day, 'week': car(ev, 0, 5), 'month': car(ev, 0, 21),
+            'pre': car(ev, -features.PRE_WINDOW_DAYS, -1), 'day': day, 'week': car(ev, 0, 5), 'month': car(ev, 0, 21),
             't': t, 'size': abs(t) if np.isfinite(t) else np.nan}

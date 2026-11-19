@@ -255,6 +255,11 @@ if len(data):
 else:
     ui.note('Stock prices have not been loaded yet, so this chapter is waiting for the pipeline to run.')
 
+# ---------------------------------------------------------------- 4b. first reaction vs. readjustment (optional add-on)
+if features.SHOW_GAP_STUDY:
+    import gap_view
+    gap_view.story_chapter(chapter, so_what)
+
 # ---------------------------------------------------------------- 5. can you trade it?
 mr = da.model_results() or {}
 trained = mr.get('status') == 'ok' and any(t.get('status') == 'ok' for t in mr.get('targets', {}).values())

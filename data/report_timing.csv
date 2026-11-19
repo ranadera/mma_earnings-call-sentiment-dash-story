@@ -1,0 +1,24 @@
+ticker,timing,note
+JPM,before_open,US banks release results before the market opens
+C,before_open,US banks release results before the market opens
+BAC,before_open,US banks release results before the market opens
+WFC,before_open,US banks release results before the market opens
+PNC,before_open,US banks release results before the market opens
+GS,before_open,US banks release results before the market opens
+USB,before_open,US banks release results before the market opens
+AAPL,after_close,Big tech reports after the 4 pm close
+MSFT,after_close,Big tech reports after the 4 pm close
+AMZN,after_close,Big tech reports after the 4 pm close
+GOOGL,after_close,Big tech reports after the 4 pm close
+META,after_close,Big tech reports after the 4 pm close
+NVDA,after_close,Big tech reports after the 4 pm close
+AMD,after_close,Reports after the close
+AVGO,after_close,Reports after the close
+ORCL,after_close,Reports after the close
+QCOM,after_close,Reports after the close
+KLAC,after_close,Reports after the close
+PANW,after_close,Reports after the close
+MPWR,after_close,Reports after the close
+SNDK,after_close,Reports after the close
+WDC,after_close,Reports after the close
+CRWV,after_close,Reports after the close

@@ -16,6 +16,17 @@
 > - **Data updates:** the private transcripts workflow publishes the same derived scores to both repositories, so the two apps always show the same numbers.
 > - **Link back to version 1:** set `V1_APP_URL` in `features.py`.
 >
+>
+> **Version 2 add-ons and how to roll them back** (each is independent):
+> - **Pre-call window:** `PRE_WINDOW_DAYS = 5` in `features.py` shows the 5 trading days before the call instead of the month before.
+>   Set it to `21` to go back to the original month.
+> - **First reaction vs. readjustment:** splits the 2-day reaction into the overnight jump (last close to next open) and the first
+>   trading session (open to close), each against the market, using daily open/close prices (no intraday data needed). Files:
+>   `gap_view.py`, `pipeline/gap_study.py`, `data/report_timing.csv`, `data/gap_study.csv`, `.github/workflows/gap-study.yml`
+>   (rebuilds the data whenever the call scores change). Set `SHOW_GAP_STUDY = False` in `features.py` to hide it; delete those
+>   files to remove it. Limit: with daily data the overnight jump contains the release and usually the call too.
+> - **Full rollback:** the branch `backup/v2-before-gap-study` holds version 2 exactly as it was before these add-ons.
+>
 > Everything below describes the shared method and pipeline.
 
 **MMA 823: Analytics for Financial Markets** · Smith School of Business, Queen's University

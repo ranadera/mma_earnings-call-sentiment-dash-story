@@ -186,11 +186,15 @@ def render(*, company, ticker, call_date, scored, res, peers, peer_word, lm, neu
 
     # ---- 6. the market: the full event study, same as in Full analysis (the core deliverable)
     _ch('6 · THE MARKET', 'How the stock moved around this call',
-        'Did investors react to this call? We compare the stock with the market from a month before to a month after the call, '
+        'Did investors react to this call? We compare the stock with the market from just before to a month after the call, '
         'test whether the move was unusual for this stock, and check whether it went the way the tone suggested.')
     shown = market_section(show_header=False) if market_section else None
     if shown:
         r.update(shown)
+    import features
+    if features.SHOW_GAP_STUDY:
+        import gap_view
+        gap_view.call_block(ticker, call_date)
 
     # ---- 7. bottom line
     _ch('7 · THE BOTTOM LINE', 'What to take away')

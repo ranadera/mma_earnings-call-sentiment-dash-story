@@ -1,0 +1,32 @@
+# Version 2 add-on: rebuild data/gap_study.csv (first reaction vs. readjustment) whenever the call scores change.
+# Runs on its own; if it fails, the rest of the app and its data are unaffected. Delete this file to switch it off.
+name: Gap study (first reaction vs readjustment)
+
+on:
+  push:
+    branches: [main]
+    paths: ['data/call_sentiment.csv', 'data/report_timing.csv', 'pipeline/gap_study.py']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  gap-study:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install
+        run: pip install pandas numpy yfinance
+      - name: Build data/gap_study.csv
+        run: python pipeline/gap_study.py --data data
+      - name: Commit if changed
+        run: |
+          git config user.name "quanta-mentals-bot"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/gap_study.csv
+          if git diff --cached --quiet; then echo "No changes."; else
+            git commit -m "Update gap study (first reaction vs readjustment)"; git pull --rebase; git push; fi

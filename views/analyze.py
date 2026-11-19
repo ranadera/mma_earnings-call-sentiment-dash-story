@@ -8,6 +8,7 @@ import pandas as pd
 import streamlit as st
 
 import data_access as da
+import features
 import market as mk
 import sentiment_core as sc
 import ui
@@ -150,7 +151,7 @@ def market_section(show_header=True):
                 w = ev[(ev['day'] >= a) & (ev['day'] <= b)]
                 return (1 + w[col]).prod() - 1 if not w.empty and w['day'].max() >= b else np.nan
 
-            pre_car, day_car, week_car, month_car = mk.car(ev, -21, -1), mk.car(ev, 0, 1), mk.car(ev, 0, 5), mk.car(ev, 0, 21)
+            pre_car, day_car, week_car, month_car = mk.car(ev, -features.PRE_WINDOW_DAYS, -1), mk.car(ev, 0, 1), mk.car(ev, 0, 5), mk.car(ev, 0, 21)
             stock_day, mkt_day = raw(ev, 0, 1, 'ret'), raw(ev, 0, 1, 'bench_ret')
             noise, est_n, est_window = mk.estimation_sd(px, pt, call_date, mkt)
             t_stat = day_car / (noise * np.sqrt(2)) if np.isfinite(day_car) and noise and noise > 0 else np.nan
@@ -158,7 +159,7 @@ def market_section(show_header=True):
             sec_day = mk.car(ev_sec, 0, 1) if ev_sec is not None else np.nan
 
             st.markdown(f"""<div class="qm-steps">
-    <div class="qm-step"><span class="n">THE QUESTION</span><h5>Did this call move the stock?</h5><p>We look at the stock from one month before to one month after the call.</p></div>
+    <div class="qm-step"><span class="n">THE QUESTION</span><h5>Did this call move the stock?</h5><p>We look at the stock from shortly before to one month after the call.</p></div>
     <div class="qm-step"><span class="n">THE ADJUSTMENT</span><h5>Remove the market's move</h5><p>Each day we subtract the {mkt_label}'s return, so a market-wide rally or sell-off is not credited to the call. This is the {term("Abnormal return", "abnormal return")}.</p></div>
     <div class="qm-step"><span class="n">THE SIZE TEST</span><h5>Was the move unusual?</h5><p>We compare the move after the call with how much this stock normally wobbles against the market on an ordinary day.</p></div>
     <div class="qm-step"><span class="n">THE VIEW</span><h5>Does it match the tone?</h5><p>We check whether the stock moved in the direction the call's tone suggested.</p></div>
@@ -167,7 +168,7 @@ def market_section(show_header=True):
 
             st.caption('All four figures are abnormal returns: the stock\'s move minus the ' + mkt_label + '\'s move over the same days.')
             k = st.columns(4)
-            cards = [('Month before (−21 to −1)', pre_car, 'Was the stock already rising or falling before the call?'),
+            cards = [(f'{features.pre_window_label().capitalize()} (−{features.PRE_WINDOW_DAYS} to −1)', pre_car, 'Was the stock already rising or falling before the call?'),
                      ('Reaction (day 0 to +1)', day_car, f'Stock itself <b>{stock_day:+.1%}</b>, {mkt_label} <b>{mkt_day:+.1%}</b>' if np.isfinite(stock_day) else 'Not enough trading days yet'),
                      ('First week (0 to +5)', week_car, 'Did the reaction hold, grow or fade?'),
                      ('First month (0 to +21)', month_car, 'The longer-run move after the call')]
@@ -189,7 +190,7 @@ def market_section(show_header=True):
             zero = alt.Chart(pd.DataFrame({'y': [0]})).mark_rule(color=ui.LINE).encode(y='y:Q')
             st.altair_chart(alt.layer(band, zero, line).properties(height=300), width='stretch')
             st.caption('Read the line as a running score against the market: above zero = the stock did better than the ' + mkt_label + ' since the start of that side of '
-                       'the window; below zero = worse. Left of the shaded band: the month before the call. Right of it: the month after.')
+                       'the window; below zero = worse. Left of the shaded band: the days before the call. Right of it: the month after.')
 
             # our view
             if not np.isfinite(day_car):
@@ -222,7 +223,7 @@ def market_section(show_header=True):
                         'neutral, so the language does not explain the direction; the numbers, guidance or other news are the likelier drivers.')
                 extra = []
                 if np.isfinite(pre_car) and abs(pre_car) > 0.03:
-                    extra.append(f'The stock had already {"outperformed" if pre_car > 0 else "underperformed"} the market by {abs(pre_car):.1%} in the month before the call, '
+                    extra.append(f'The stock had already {"outperformed" if pre_car > 0 else "underperformed"} the market by {abs(pre_car):.1%} in the ' + features.pre_window_label() + ' the call, '
                                  'so part of the news may have been priced in beforehand.')
                 if np.isfinite(week_car):
                     if np.sign(week_car) == np.sign(day_car) and abs(week_car) > abs(day_car):
@@ -260,7 +261,7 @@ def market_section(show_header=True):
     <b>Method</b> (market-adjusted model, MacKinlay 1997):<br>
     • Daily return R = P(t) / P(t−1) − 1, using adjusted closes. Day 0 = the call date, or the next trading day.<br>
     • Abnormal return AR(t) = R<sub>stock</sub>(t) − R<sub>benchmark</sub>(t).<br>
-    • Cumulative abnormal return CAR(a, b) = sum of AR(t) from day a to day b. Windows: month before (−21 to −1), reaction (0 to +1), week (0 to +5), month (0 to +21).<br>
+    • Cumulative abnormal return CAR(a, b) = sum of AR(t) from day a to day b. Windows: before the call (−{features.PRE_WINDOW_DAYS} to −1), reaction (0 to +1), week (0 to +5), month (0 to +21).<br>
     • Significance: t = CAR(0,+1) / (σ × √2), σ estimated on {est_window} ({est_n} days), which do not overlap the reaction window.<br>
     • Day 0 to +1 is used so that calls held after the market close are captured.<br><br>
     <b>How the text on this page is produced.</b> No AI or language model is used. All numbers are computed by the code in

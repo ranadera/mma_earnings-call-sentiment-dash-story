@@ -5,3 +5,15 @@ SHOW_PROF_MEHMET = True
 
 # Link to the classic (v1) app, shown on the story page. Paste the v1 Streamlit URL here; None hides the link.
 V1_APP_URL = None
+
+# Window shown as "before the call" in the price reaction (trading days). 5 = the week before; 21 = the month before (original design).
+PRE_WINDOW_DAYS = 5
+
+# "First reaction vs. readjustment": splits the reaction into the overnight gap and the first trading session after the call.
+# Needs data/gap_study.csv (made by .github/workflows/gap-study.yml). False hides it everywhere; nothing else needs to change.
+SHOW_GAP_STUDY = True
+
+
+def pre_window_label():
+    """'month before' or 'N days before', following PRE_WINDOW_DAYS."""
+    return 'month before' if PRE_WINDOW_DAYS >= 20 else f'{PRE_WINDOW_DAYS} trading days before'
