@@ -1,6 +1,8 @@
 # Licensed transcripts and derived text must not be published
 transcripts/
 *.pdf
+# ...except the synthetic practice calls (invented wording, labelled SYNTHETIC on every page)
+!samples/*.pdf
 turn_sentiment.csv
 LM_MasterDictionary.csv
 # Market data caches

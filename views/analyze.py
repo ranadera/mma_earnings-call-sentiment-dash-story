@@ -52,8 +52,13 @@ with st.sidebar:
         pick = st.selectbox('Sample call', list(samples), help='Fictional practice transcripts written for testing: real ticker and '
                             'call date (so the real stock reaction is shown), invented speakers and wording.')
         st.caption('Synthetic practice call: the words are invented; the stock prices are real.')
-        name = samples[pick]
-        data = open(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'samples', name), 'rb').read()
+        path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'samples', samples[pick])
+        if os.path.exists(path):
+            name, data = samples[pick], open(path, 'rb').read()
+            st.download_button('Download this sample (PDF)', data, file_name=name, mime='application/pdf', icon=':material/download:',
+                               width='stretch')
+        else:
+            st.warning('Sample file not found.')
     elif source == 'Upload a file':
         f = st.file_uploader('PDF or text file', type=['pdf', 'txt'], help='Bloomberg and LSEG PDFs are read automatically, including the ticker and date.')
         if f is not None:
@@ -93,8 +98,13 @@ if data is None:
 <h3>Start with a transcript</h3><p>Use the panel on the left to upload a Bloomberg, LSEG or company investor-relations PDF, paste the text of any earnings call, or choose <b>Try a sample</b>.</p></div>""",
                     unsafe_allow_html=True)
         # works on phones too, where the left panel starts hidden
-        st.button('Try a sample call', icon=':material/play_arrow:', type='primary',
+        b1, b2 = st.columns(2)
+        b1.button('Try a sample call', icon=':material/play_arrow:', type='primary', width='stretch',
                   on_click=lambda: st.session_state.update(input_source='Try a sample'))
+        sample_pdf = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'samples', 'TEST_QCOM_2026-04-29_synthetic_transcript.pdf')
+        if os.path.exists(sample_pdf):
+            b2.download_button('Download a sample transcript', open(sample_pdf, 'rb').read(), width='stretch',
+                               file_name='TEST_QCOM_2026-04-29_synthetic_transcript.pdf', mime='application/pdf', icon=':material/download:')
     if c_qr is not None:
         with c_qr:
             qr_card.render()
