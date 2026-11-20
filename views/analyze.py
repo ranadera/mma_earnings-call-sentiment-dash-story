@@ -42,9 +42,19 @@ ui.hero('Analyze a call', 'Score any earnings call in seconds',
 with st.sidebar:
     st.markdown('<div class="qm-side-brand">QUANTA-MENTALS<span>Call analyzer</span></div>', unsafe_allow_html=True)
     st.markdown('<p class="qm-side-h">1 · Transcript</p>', unsafe_allow_html=True)
-    source = st.radio('Input', ['Upload a file', 'Paste text'], horizontal=True, label_visibility='collapsed')
+    source = st.radio('Input', ['Upload a file', 'Paste text', 'Try a sample'], horizontal=True, label_visibility='collapsed',
+                      key='input_source')
     name, data = None, None
-    if source == 'Upload a file':
+    if source == 'Try a sample':
+        samples = {'Qualcomm, April 2026 (upbeat)': 'TEST_QCOM_2026-04-29_synthetic_transcript.pdf',
+                   'AMD, February 2026 (careful outlook)': 'TEST_AMD_2026-02-03_synthetic_transcript.pdf',
+                   'KLA, January 2026 (cautious)': 'TEST_KLAC_2026-01-29_synthetic_transcript.pdf'}
+        pick = st.selectbox('Sample call', list(samples), help='Fictional practice transcripts written for testing: real ticker and '
+                            'call date (so the real stock reaction is shown), invented speakers and wording.')
+        st.caption('Synthetic practice call: the words are invented; the stock prices are real.')
+        name = samples[pick]
+        data = open(os.path.join(os.path.dirname(os.path.dirname(__file__)), 'samples', name), 'rb').read()
+    elif source == 'Upload a file':
         f = st.file_uploader('PDF or text file', type=['pdf', 'txt'], help='Bloomberg and LSEG PDFs are read automatically, including the ticker and date.')
         if f is not None:
             name, data = f.name, f.getvalue()
@@ -76,9 +86,18 @@ with st.sidebar:
 
 if data is None:
     ui.coverage_banner(bench, calibrated, counts)
-    st.markdown("""<div class="qm-empty">""" + ui.icon("upload_file") + """
-<h3>Start with a transcript</h3><p>Use the panel on the left to upload a Bloomberg, LSEG or company investor-relations PDF, or paste the text of any earnings call.</p></div>""",
-                unsafe_allow_html=True)
+    import qr_card
+    c_empty, c_qr = st.columns([3, 1]) if features.SHOW_QR else (st.container(), None)
+    with c_empty:
+        st.markdown("""<div class="qm-empty">""" + ui.icon("upload_file") + """
+<h3>Start with a transcript</h3><p>Use the panel on the left to upload a Bloomberg, LSEG or company investor-relations PDF, paste the text of any earnings call, or choose <b>Try a sample</b>.</p></div>""",
+                    unsafe_allow_html=True)
+        # works on phones too, where the left panel starts hidden
+        st.button('Try a sample call', icon=':material/play_arrow:', type='primary',
+                  on_click=lambda: st.session_state.update(input_source='Try a sample'))
+    if c_qr is not None:
+        with c_qr:
+            qr_card.render()
     st.markdown(f"""<div class="qm-steps">
 <div class="qm-step"><span class="n">1 · READ</span><h5>Split the call</h5><p>{term("Prepared presentation", "Prepared presentation")}, analyst questions and management answers.</p></div>
 <div class="qm-step"><span class="n">2 · SCORE</span><h5>Measure tone</h5><p>Upbeat, downbeat and uncertain finance words, cross-checked by two general tools.</p></div>

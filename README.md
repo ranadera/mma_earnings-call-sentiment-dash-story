@@ -25,6 +25,9 @@
 >   `gap_view.py`, `pipeline/gap_study.py`, `data/report_timing.csv`, `data/gap_study.csv`, `.github/workflows/gap-study.yml`
 >   (rebuilds the data whenever the call scores change). Set `SHOW_GAP_STUDY = False` in `features.py` to hide it; delete those
 >   files to remove it. Limit: with daily data the overnight jump contains the release and usually the call too.
+> - **QR code and sample calls:** the Analyze page shows a QR code (`qr_card.py`, switch `SHOW_QR`; set `APP_URL` in `features.py`
+>   to the public link) and a **Try a sample call** button that loads one of three synthetic practice transcripts in `samples/`
+>   (invented wording, real ticker and date, so the real stock reaction is shown).
 > - **Full rollback:** the branch `backup/v2-before-gap-study` holds version 2 exactly as it was before these add-ons.
 >
 > Everything below describes the shared method and pipeline.

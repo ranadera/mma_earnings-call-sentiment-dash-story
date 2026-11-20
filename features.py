@@ -17,3 +17,9 @@ SHOW_GAP_STUDY = True
 def pre_window_label():
     """'month before' or 'N days before', following PRE_WINDOW_DAYS."""
     return 'month before' if PRE_WINDOW_DAYS >= 20 else f'{PRE_WINDOW_DAYS} trading days before'
+
+# QR code on the "Analyze a call" page so people can open the app on their phone. False hides it.
+SHOW_QR = True
+# The address the QR code opens. None = the address the page is being viewed at. Paste the public link here to be safe, e.g.
+# 'https://your-app.streamlit.app/analyze'
+APP_URL = None

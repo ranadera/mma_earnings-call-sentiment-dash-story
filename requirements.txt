@@ -8,3 +8,4 @@ vaderSentiment>=3.3
 textblob>=0.17
 pysentiment2>=0.1
 yfinance>=0.2.50
+segno>=1.6
