@@ -157,15 +157,45 @@ def render(*, company, ticker, call_date, scored, res, peers, peer_word, lm, neu
                 '<div class="cs-gl"><span>More cautious than other calls</span><span>Typical</span><span>More upbeat than other calls</span></div>',
                 unsafe_allow_html=True)
 
-    # ---- 4. script vs Q&A
+    # ---- 4. script vs Q&A, in plain language
     if has_qa and _ok(shift):
         fell_share = float((peers['tone_shift'] < 0).mean()) if 'tone_shift' in peers else np.nan
-        _ch('4 · UNDER PRESSURE', 'Management kept its confidence in the live Q&amp;A' if held else 'Confidence slipped once the script ended',
-            f'The prepared remarks scored <b>{res["pres_tone"]:.2f}</b>; management\'s live answers scored <b>{res["qa_mgmt_tone"]:.2f}</b> '
-            '(net upbeat words per 100). '
-            + ('Holding up under questioning is a good sign: the confidence was not only in the script.' if held else
-               'A drop is common, scripts are polished, but it shows where management was less sure.')
-            + (f' For comparison, tone dropped in {fell_share:.0%} of {esc(peer_word)}.' if _ok(fell_share) else ''))
+        pres, live = res['pres_tone'], res['qa_mgmt_tone']
+        gap = live - pres
+        if held:
+            title = 'Management stayed confident when analysts started asking questions'
+            meaning = ('That is a good sign. The confidence was not only in the polished script; it held up when '
+                       'management had to answer on the spot.')
+        else:
+            title = 'Management sounded less confident once the script ended'
+            meaning = ('This is common, because prepared remarks are written and rehearsed. But it shows where management '
+                       'was less sure, so those answers are worth reading closely.')
+        rarity = ''
+        if _ok(fell_share):
+            k = round(fell_share * 10)
+            rarity = (f' For comparison, in about <b>{k} out of 10</b> {esc(peer_word)}, management sounded less upbeat in the Q&amp;A'
+                      + (', so holding steady like this is unusual.' if held and k >= 6 else '.'))
+        _ch('4 · UNDER PRESSURE', title,
+            'Every call has two parts: a <b>prepared script</b> read by management, then <b>live questions</b> from analysts. '
+            'We compare how upbeat management sounded in each.')
+
+        def box(label, sub, v, color):
+            return (f'<div style="flex:1;background:#fff;border:1px solid #E3E7EE;border-top:5px solid {color};border-radius:10px;'
+                    f'padding:14px 18px"><div style="font-size:.78rem;letter-spacing:.08em;font-weight:700;color:#5B6475">{label}</div>'
+                    f'<div style="font-size:2rem;font-weight:800;color:{ui.SMITH_BLUE};line-height:1.1;margin-top:4px">{v:.1f}</div>'
+                    f'<div style="font-size:.86rem;color:#5B6475">{sub}</div></div>')
+        arrow_color = ui.OLIVE if held else ui.ROSE
+        st.markdown(
+            '<div style="display:flex;align-items:center;gap:14px;margin:12px 0">'
+            + box('PREPARED SCRIPT', 'Written and rehearsed', pres, ui.SMITH_BLUE)
+            + f'<div style="text-align:center;min-width:110px"><div style="font-size:2rem;color:{arrow_color}">&#10132;</div>'
+              f'<div style="font-weight:700;color:{arrow_color}">{"Up" if gap >= 0 else "Down"} {abs(gap):.1f}</div></div>'
+            + box('LIVE ANSWERS TO ANALYSTS', 'Unscripted, on the spot', live, arrow_color)
+            + '</div>', unsafe_allow_html=True)
+        st.markdown(f'<p style="color:#3D4656;line-height:1.6;max-width:900px;margin:4px 0 0">{meaning}{rarity}</p>'
+                    '<p style="color:#6B7486;font-size:.86rem;margin:6px 0 0">How to read the score: roughly how many more upbeat '
+                    'words than downbeat words management used per 100 words. 0 is neutral; higher is more upbeat.</p>',
+                    unsafe_allow_html=True)
 
     # ---- 5. analysts
     an = scored[(scored['part'] == 'qa_analyst') & (scored['n_words'] > 20)]
