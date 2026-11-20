@@ -39,6 +39,20 @@ ui.hero('Analyze a call', 'Score any earnings call in seconds',
         'Upload a transcript (Bloomberg, LSEG or company investor-relations PDF) or paste the text of any earnings call. The app splits it into the scripted '
         'presentation and the live Q&amp;A, measures the tone of each part, compares it with its sector, and shows how the stock moved around the call.')
 
+def _new_analysis():
+    """Clear the current call and every input, so the page starts fresh."""
+    nonce = st.session_state.get('nonce', 0) + 1
+    for k in list(st.session_state.keys()):
+        del st.session_state[k]
+    st.session_state['nonce'] = nonce
+
+
+def new_analysis_button(key, **kw):
+    st.button('Start a new analysis', icon=':material/restart_alt:', key=key, on_click=_new_analysis, **kw)
+
+
+NONCE = st.session_state.get('nonce', 0)  # part of the input keys, so a new analysis gets fresh, empty inputs
+
 with st.sidebar:
     st.markdown('<div class="qm-side-brand">QUANTA-MENTALS<span>Call analyzer</span></div>', unsafe_allow_html=True)
     st.markdown('<p class="qm-side-h">1 · Transcript</p>', unsafe_allow_html=True)
@@ -49,7 +63,7 @@ with st.sidebar:
         samples = {'Qualcomm, April 2026 (upbeat)': 'TEST_QCOM_2026-04-29_synthetic_transcript.pdf',
                    'AMD, February 2026 (careful outlook)': 'TEST_AMD_2026-02-03_synthetic_transcript.pdf',
                    'KLA, January 2026 (cautious)': 'TEST_KLAC_2026-01-29_synthetic_transcript.pdf'}
-        pick = st.selectbox('Sample call', list(samples), help='Fictional practice transcripts written for testing: real ticker and '
+        pick = st.selectbox('Sample call', list(samples), key=f'sample_{NONCE}', help='Fictional practice transcripts written for testing: real ticker and '
                             'call date (so the real stock reaction is shown), invented speakers and wording.')
         st.caption('Synthetic practice call: the words are invented; the stock prices are real.')
         path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'samples', samples[pick])
@@ -60,7 +74,7 @@ with st.sidebar:
         else:
             st.warning('Sample file not found.')
     elif source == 'Upload a file':
-        f = st.file_uploader('PDF or text file', type=['pdf', 'txt'], help='Bloomberg and LSEG PDFs are read automatically, including the ticker and date.')
+        f = st.file_uploader('PDF or text file', type=['pdf', 'txt'], key=f'side_upload_{NONCE}', help='Bloomberg and LSEG PDFs are read automatically, including the ticker and date.')
         if f is not None:
             name, data = f.name, f.getvalue()
         elif st.session_state.get('main_file'):  # uploaded from the main page (phones, where this panel starts hidden)
@@ -68,24 +82,26 @@ with st.sidebar:
             st.caption(f'Using **{name}** (uploaded on the main page).')
             st.button('Clear this file', on_click=lambda: st.session_state.pop('main_file', None))
     else:
-        text = st.text_area('Paste the transcript', height=220,
+        text = st.text_area('Paste the transcript', height=220, key=f'paste_{NONCE}',
                             help='If the text contains a heading such as "Questions And Answers", the app splits the presentation from the Q&A.')
         if text.strip():
             name, data = 'pasted.txt', text.encode('utf-8')
 
+    if data:
+        new_analysis_button('new_side', width='stretch')
     st.markdown('<p class="qm-side-h">2 · Company</p>', unsafe_allow_html=True)
     auto = detect_meta(name, data) if data else {'ticker': '', 'call_date': '', 'company': ''}
-    ticker = st.text_input('Ticker', value=auto['ticker'], placeholder='e.g. JPM',
+    ticker = st.text_input('Ticker', value=auto['ticker'], placeholder='e.g. JPM', key=f'ticker_{NONCE}_{name}',
                            help='Read from the transcript when possible. Needed for the sector and the price reaction.').strip().upper()
     default_date = pd.to_datetime(auto['call_date']).date() if auto['call_date'] else None
-    call_date = st.date_input('Call date', value=default_date, max_value=dt.date.today(), format='YYYY-MM-DD')
+    call_date = st.date_input('Call date', value=default_date, max_value=dt.date.today(), format='YYYY-MM-DD', key=f'date_{NONCE}_{name}')
 
     st.markdown('<p class="qm-side-h">3 · Compare with</p>', unsafe_allow_html=True)
     detected, how = (sector_map.get(ticker), 'our sector map') if ticker in sector_map else (None, None)
     if ticker and not detected:
         detected, how = mk.yahoo_sector(ticker), 'Yahoo Finance'
     options = ['Auto-detect'] + calibrated + ['All benchmark calls']
-    sector_choice = st.selectbox('Benchmark group', options, label_visibility='collapsed',
+    sector_choice = st.selectbox('Benchmark group', options, label_visibility='collapsed', key=f'group_{NONCE}',
                                  help='Each sector has its own vocabulary (banks say credit, losses and reserves, which the finance dictionary counts as negative), '
                                       'so a call is best compared with its own sector.')
     if sector_choice == 'Auto-detect':
@@ -103,11 +119,11 @@ if data is None:
                     unsafe_allow_html=True)
         # works on phones too, where the left panel starts hidden
         def _keep_main_upload():
-            up = st.session_state.get('main_upload')
+            up = st.session_state.get(f'main_upload_{NONCE}')
             if up is not None:
                 st.session_state['main_file'] = (up.name, up.getvalue())
                 st.session_state['input_source'] = 'Upload a file'
-        st.file_uploader('Upload a transcript (PDF or text)', type=['pdf', 'txt'], key='main_upload', on_change=_keep_main_upload,
+        st.file_uploader('Upload a transcript (PDF or text)', type=['pdf', 'txt'], key=f'main_upload_{NONCE}', on_change=_keep_main_upload,
                          help='Works on phones too. Bloomberg, LSEG and company investor-relations PDFs are read automatically.')
         b1, b2 = st.columns(2)
         b1.button('Try a sample call', icon=':material/play_arrow:', type='primary', width='stretch',
@@ -315,7 +331,10 @@ def market_section(show_header=True):
             return {'day': day_car, 'pre': pre_car, 'week': week_car, 'size': size}
     return None
 
-mode = st.segmented_control('View', ['Story mode', 'Full analysis'], default='Story mode', key='view_mode',
+v1, v2 = st.columns([3, 1], vertical_alignment='bottom')
+with v2:
+    new_analysis_button('new_top', width='stretch')
+mode = v1.segmented_control('View', ['Story mode', 'Full analysis'], default='Story mode', key='view_mode',
                             help='Story mode tells what happened on the call in plain language. Full analysis shows every number, chart and the method.')
 if mode != 'Full analysis':
     import call_story
@@ -329,6 +348,8 @@ if mode != 'Full analysis':
         import prof_mehmet
         prof_mehmet.render(res, peer_word, lex_sector,
                            None if 'error' in story_reaction else {k: story_reaction[k] for k in ('day', 'pre', 'week', 'size')})
+    st.markdown('<div style="margin-top:28px"></div>', unsafe_allow_html=True)
+    new_analysis_button('new_bottom', type='primary')
     ui.references()
     ui.footer()
     st.stop()
@@ -576,6 +597,9 @@ if features.SHOW_PROF_MEHMET:
     import prof_mehmet
     prof_mehmet.render(res, peer_word, lex_sector, reaction)
 # --- end of bonus section ---
+
+st.markdown('<div style="margin-top:28px"></div>', unsafe_allow_html=True)
+new_analysis_button('new_bottom', type='primary')
 
 ui.references()
 ui.footer()
