@@ -63,6 +63,10 @@ with st.sidebar:
         f = st.file_uploader('PDF or text file', type=['pdf', 'txt'], help='Bloomberg and LSEG PDFs are read automatically, including the ticker and date.')
         if f is not None:
             name, data = f.name, f.getvalue()
+        elif st.session_state.get('main_file'):  # uploaded from the main page (phones, where this panel starts hidden)
+            name, data = st.session_state['main_file']
+            st.caption(f'Using **{name}** (uploaded on the main page).')
+            st.button('Clear this file', on_click=lambda: st.session_state.pop('main_file', None))
     else:
         text = st.text_area('Paste the transcript', height=220,
                             help='If the text contains a heading such as "Questions And Answers", the app splits the presentation from the Q&A.')
@@ -95,9 +99,16 @@ if data is None:
     c_empty, c_qr = st.columns([3, 1]) if features.SHOW_QR else (st.container(), None)
     with c_empty:
         st.markdown("""<div class="qm-empty">""" + ui.icon("upload_file") + """
-<h3>Start with a transcript</h3><p>Use the panel on the left to upload a Bloomberg, LSEG or company investor-relations PDF, paste the text of any earnings call, or choose <b>Try a sample</b>.</p></div>""",
+<h3>Start with a transcript</h3><p>Upload a Bloomberg, LSEG or company investor-relations PDF below, or tap <b>Try a sample call</b>. To paste text instead, use the side panel.</p></div>""",
                     unsafe_allow_html=True)
         # works on phones too, where the left panel starts hidden
+        def _keep_main_upload():
+            up = st.session_state.get('main_upload')
+            if up is not None:
+                st.session_state['main_file'] = (up.name, up.getvalue())
+                st.session_state['input_source'] = 'Upload a file'
+        st.file_uploader('Upload a transcript (PDF or text)', type=['pdf', 'txt'], key='main_upload', on_change=_keep_main_upload,
+                         help='Works on phones too. Bloomberg, LSEG and company investor-relations PDFs are read automatically.')
         b1, b2 = st.columns(2)
         b1.button('Try a sample call', icon=':material/play_arrow:', type='primary', width='stretch',
                   on_click=lambda: st.session_state.update(input_source='Try a sample'))

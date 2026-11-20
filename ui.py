@@ -71,6 +71,8 @@ header[data-testid="stHeader"] [data-testid="stToolbar"]::before {{ content: "QU
 [data-testid="stTopNavLink"][aria-current="page"], [data-testid="stTopNavLink"].active {{ background: rgba(250,189,15,.14) !important; box-shadow: inset 0 -3px 0 {GOLD}; }}
 [data-testid="stTopNavLink"][aria-current="page"] span {{ color: {GOLD} !important; }}
 [data-testid="stSidebarCollapsedControl"] button, [data-testid="stExpandSidebarButton"] {{ color: #fff !important; }}
+header[data-testid="stHeader"] button, header[data-testid="stHeader"] button svg,
+header[data-testid="stHeader"] [data-testid="stIconMaterial"], [data-testid="stExpandSidebarButton"] [data-testid="stIconMaterial"] {{ color: #fff !important; fill: #fff !important; opacity: 1 !important; }}
 
 .block-container {{ padding-top: 5.2rem; max-width: 1240px; }}
 h1, h2, h3 {{ color: {SMITH_BLUE}; font-weight: 900 !important; letter-spacing: -0.01em; }}
