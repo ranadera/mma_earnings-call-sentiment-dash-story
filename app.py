@@ -4,7 +4,12 @@ Run with:  streamlit run app.py
 """
 import streamlit as st
 
+import importlib
+
 import features
+
+# Streamlit Cloud can keep an older copy of features.py in memory after an update; reload it so new switches are always seen.
+importlib.reload(features)
 
 st.set_page_config(page_title='Quanta-Mentals · Earnings Call Sentiment', page_icon=':material/insights:', layout='wide')
 
@@ -18,7 +23,7 @@ pages = {
     'Try it': [st.Page('views/analyze.py', title='Analyze a call', icon=':material/upload_file:')],
     'Details': [
         st.Page('views/home.py', title='Overview', icon=':material/home:'),
-        st.Page('views/explorer.py' if features.EXPLORER_V2 else 'views/explorer_classic.py', title='Benchmark explorer',
+        st.Page('views/explorer.py' if getattr(features, 'EXPLORER_V2', True) else 'views/explorer_classic.py', title='Benchmark explorer',
                 icon=':material/leaderboard:', url_path='explorer'),
         st.Page('views/market_reaction.py', title='Market reaction', icon=':material/candlestick_chart:'),
         st.Page('views/stocks.py', title='Stock reports', icon=':material/description:'),
