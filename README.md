@@ -28,6 +28,10 @@
 > - **QR code and sample calls:** the Analyze page shows a QR code (`qr_card.py`, switch `SHOW_QR`; set `APP_URL` in `features.py`
 >   to the public link) and a **Try a sample call** button that loads one of three synthetic practice transcripts in `samples/`
 >   (invented wording, real ticker and date, so the real stock reaction is shown).
+> - **Benchmark explorer (team feedback):** sectors first, a three-method comparison (bank-vs-tech gap and link to the 2-day move),
+>   ranking by any method, script-vs-live and management-vs-analyst change bars, an average Q&A-start marker (`qa_start`, saved by the
+>   pipeline) and stacked over-time charts by sector. Set `EXPLORER_V2 = False` in `features.py` to show the original page
+>   (`views/explorer_classic.py`).
 > - **Full rollback:** the branch `backup/v2-before-gap-study` holds version 2 exactly as it was before these add-ons.
 >
 > Everything below describes the shared method and pipeline.

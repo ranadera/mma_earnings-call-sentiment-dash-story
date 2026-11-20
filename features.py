@@ -23,3 +23,7 @@ SHOW_QR = True
 # The address the QR code opens. None = the address the page is being viewed at. Paste the public link here to be safe, e.g.
 # 'https://your-app.streamlit.app/analyze'
 APP_URL = None
+
+# Benchmark explorer layout. True = team-feedback layout (sectors first, method comparison, change bars, Q&A marker,
+# stacked over-time charts). False = the original page (views/explorer_classic.py).
+EXPLORER_V2 = True

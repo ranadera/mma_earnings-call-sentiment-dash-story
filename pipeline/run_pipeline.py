@@ -77,7 +77,8 @@ def score_all(root, data_dir):
                     'hedging': get('qa_management', 'lm_uncertainty') - get('presentation', 'lm_uncertainty')})
         a = t[t['part'] == 'qa_analyst']
         row['analyst_neg_share'] = ((a['lm_pos'] - a['lm_neg']) < 0).mean() if len(a) else np.nan
-        segs, _ = sc.segments(t, lm)
+        segs, qa_start = sc.segments(t, lm)
+        row['qa_start'] = qa_start  # where the Q&A begins, in tenths of the call (0-10); None if no Q&A was found
         row['call_drift'] = segs['lm_tone'].iloc[-3:].mean() - segs['lm_tone'].iloc[:3].mean()
         m = t[t['part'] == 'qa_management'].copy()
         m = m[m['n_words'] >= 30]
