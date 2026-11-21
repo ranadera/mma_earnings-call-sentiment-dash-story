@@ -18,9 +18,22 @@ import ui
 ui.setup()
 
 # Version 2: the executive story comes first; every detailed page from version 1 sits under "Details".
+analyze_page = st.Page('views/analyze.py', title='Analyze a call', icon=':material/upload_file:')
+
+
+def new_analysis():
+    """Menu item: clear the current call and every input, then open a fresh Analyze page."""
+    nonce = st.session_state.get('nonce', 0) + 1
+    for k in list(st.session_state.keys()):
+        del st.session_state[k]
+    st.session_state['nonce'] = nonce
+    st.switch_page(analyze_page)
+
+
 pages = {
-    'The story': [st.Page('views/story.py', title='The story', icon=':material/auto_stories:', default=True)],
-    'Try it': [st.Page('views/analyze.py', title='Analyze a call', icon=':material/upload_file:')],
+    '': [st.Page('views/story.py', title='The story', icon=':material/auto_stories:', default=True),
+         analyze_page,
+         st.Page(new_analysis, title='New analysis', icon=':material/restart_alt:', url_path='new')],
     'Details': [
         st.Page('views/home.py', title='Overview', icon=':material/home:'),
         st.Page('views/explorer.py' if getattr(features, 'EXPLORER_V2', True) else 'views/explorer_classic.py', title='Benchmark explorer',

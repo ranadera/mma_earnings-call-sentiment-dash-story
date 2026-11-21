@@ -331,10 +331,7 @@ def market_section(show_header=True):
             return {'day': day_car, 'pre': pre_car, 'week': week_car, 'size': size}
     return None
 
-v1, v2 = st.columns([3, 1], vertical_alignment='bottom')
-with v2:
-    new_analysis_button('new_top', width='stretch')
-mode = v1.segmented_control('View', ['Story mode', 'Full analysis'], default='Story mode', key='view_mode',
+mode = st.segmented_control('View', ['Story mode', 'Full analysis'], default='Story mode', key='view_mode',
                             help='Story mode tells what happened on the call in plain language. Full analysis shows every number, chart and the method.')
 if mode != 'Full analysis':
     import call_story
