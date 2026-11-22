@@ -37,6 +37,11 @@ def benchmark():
     b['group'] = b['ticker'].map(groups).fillna('Other ' + b['sector'].str.lower())
     b['year'] = b['call_date'].dt.year
     b['quarter'] = b['call_date'].dt.to_period('Q').astype(str)
+    # Tone vs. the company's usual: this call's overall score minus the average of the same company's EARLIER calls only.
+    b = b.sort_values(['ticker', 'call_date'])
+    b['prior_calls'] = b.groupby('ticker').cumcount()
+    b['usual_composite'] = b.groupby('ticker')['composite'].transform(lambda s: s.shift().expanding().mean())
+    b['tone_vs_usual'] = b['composite'] - b['usual_composite']
     return b
 
 

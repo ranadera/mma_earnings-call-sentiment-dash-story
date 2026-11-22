@@ -83,6 +83,28 @@ def _percentile_words(p):
             'one of the most cautious calls in our benchmark')
 
 
+def _vs_usual(company, ticker, call_date, res):
+    """How this call compares with the same company's EARLIER calls in our data (switch: features.SHOW_TONE_SURPRISE)."""
+    import features
+    if not getattr(features, 'SHOW_TONE_SURPRISE', False) or not ticker or not call_date:
+        return
+    import data_access as da
+    b = da.benchmark()
+    prior = b[(b['ticker'] == ticker.upper()) & (b['call_date'] < pd.Timestamp(call_date))]
+    if len(prior) < 2 or not _ok(res.get('composite')):
+        return
+    usual, now = prior['composite'].mean(), res['composite']
+    diff = now - usual
+    word = ('about the same as usual' if abs(diff) < 0.25 else 'more upbeat than usual' if diff > 0 else 'less upbeat than usual')
+    color = ui.OLIVE if diff >= 0.25 else ui.ROSE if diff <= -0.25 else ui.MUTED
+    poss = "'" if company.endswith('s') else "'s"
+    st.markdown(f'<div style="margin:14px 0 0;padding:12px 16px;background:#fff;border:1px solid #E3E7EE;border-left:5px solid {color};'
+                f'border-radius:8px;line-height:1.55"><b>Compared with {esc(company)}{poss} usual:</b> this call sounded '
+                f'<b style="color:{color}">{word}</b> (overall score {now:+.2f} vs. an average of {usual:+.2f} over its {len(prior)} earlier '
+                'calls in our data). Some companies always sound upbeat, so a change from their usual tone can say more than the tone itself.</div>',
+                unsafe_allow_html=True)
+
+
 def render(*, company, ticker, call_date, scored, res, peers, peer_word, lm, neutral, reaction, market_section=None):
     """reaction: dict from market.call_reaction (may contain 'error')."""
     st.markdown(CSS, unsafe_allow_html=True)
@@ -156,6 +178,7 @@ def render(*, company, ticker, call_date, scored, res, peers, peer_word, lm, neu
     st.markdown(f'<div class="cs-gauge"><div class="m" style="left:{min(max(pct, .01), .99) * 100:.0f}%"></div></div>'
                 '<div class="cs-gl"><span>More cautious than other calls</span><span>Typical</span><span>More upbeat than other calls</span></div>',
                 unsafe_allow_html=True)
+    _vs_usual(company, ticker, call_date, res)
 
     # ---- 4. script vs Q&A, in plain language
     if has_qa and _ok(shift):

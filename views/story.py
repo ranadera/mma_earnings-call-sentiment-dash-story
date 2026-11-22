@@ -296,6 +296,38 @@ so_what('By the time an investor can act, most of the reaction has already happe
         'proven, so treat it as research, not a strategy.' if not edge else
         'There is a hint of an edge after the call, but it needs more years of data and trading costs before anyone should rely on it.')
 
+# ---------------------------------------------------------------- 5b. tone vs. the company's usual (optional add-on)
+lead = None
+if getattr(features, 'SHOW_TONE_SURPRISE', False) and 'tone_vs_usual' in data:
+    from scipy import stats as _stats
+    su = data.dropna(subset=['tone_vs_usual', 'car_drift'])
+    if len(su) >= 15:
+        third = pd.qcut(su['tone_vs_usual'], 3, labels=['low', 'mid', 'high'])  # same split as the Market reaction strategy table
+        spread = su.loc[third == 'high', 'car_drift'].mean() - su.loc[third == 'low', 'car_drift'].mean()
+        rho = _stats.spearmanr(su['tone_vs_usual'], su['car_drift'])
+        lead = {'n': len(su), 'cos': su['ticker'].nunique(), 'spread': spread, 'rho': rho.correlation, 'p': rho.pvalue}
+        st.markdown(f'<h4 style="color:{ui.SMITH_BLUE};margin:30px 0 4px">The accent vs. a change in the accent</h4>'
+                    '<p style="color:#3D4656;line-height:1.6;max-width:900px;margin:0 0 8px">Some companies sound upbeat on almost every call, so '
+                    'how upbeat a call sounds mostly reflects the company\'s style. We also compared each call with <b>the same company\'s '
+                    'earlier calls</b> (only earlier ones, so nothing from the future is used): did it sound more or less upbeat than usual?</p>',
+                    unsafe_allow_html=True)
+        k1, k2, k3 = st.columns(3)
+        with k1:
+            ui.kpi('More upbeat than usual minus less upbeat than usual', pct(spread),
+                   'Top third minus bottom third of calls, days +2 to +21, before trading costs.', color=ui.OLIVE if spread > 0 else ui.ROSE)
+        with k2:
+            ui.kpi('Link to the move after the call', f'{rho.correlation:+.2f}',
+                   f'Rank correlation; p-value {rho.pvalue:.2f} ({"unlikely to be luck alone" if rho.pvalue < 0.05 else "could be luck"}).',
+                   color=ui.SKY)
+        with k3:
+            ui.kpi('Calls tested', f'{len(su)}', f'From {su["ticker"].nunique()} companies with at least one earlier call in our data.',
+                   color=ui.PUMPKIN)
+        so_what(('A change in the accent may matter more than the accent itself: when a company sounded more upbeat than it usually does, '
+                 'its stock tended to do better over the next month. This is our most promising lead, not a proven strategy: the sample is '
+                 'small, there are no trading costs, and we tested several ideas.') if rho.pvalue < 0.05 and spread > 0 else
+                ('Comparing each call with the company\'s usual tone does not show a clear link yet either. It needs more calls per company '
+                 'to test properly.'))
+
 # ---------------------------------------------------------------- 6. what it means
 chapter('means', 'CHAPTER 6', 'What this means for an investor')
 takes = [
@@ -306,6 +338,9 @@ takes = [
     'Judge each call against its own sector.',
     (f'<b>Tone is a clue, not a crystal ball.</b> The stock followed the tone in {k} of {n} calls, but other news, the numbers themselves '
      'and the wider market often matter more.' if n else '<b>Tone is a clue, not a crystal ball.</b> We still need price data to test it.')]
+if lead and lead['p'] < 0.05 and lead['spread'] > 0:
+    takes.append('<b>Watch for a change in the accent.</b> How upbeat a company sounds is mostly its style. Sounding different from its '
+                 'usual self was our most promising signal, and it is worth testing on more calls.')
 st.markdown('<div class="qs-take">' + ''.join(f'<div>{t}</div>' for t in takes) + '</div>', unsafe_allow_html=True)
 st.markdown(f"""<div class="qm-limits"><b>What we are not claiming.</b> We measure words, not intent, and we compare each stock with the market
 only. Earnings surprises, guidance, interest rates, sector news and the wider economy also move stocks and are not modelled here.

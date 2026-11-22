@@ -49,7 +49,18 @@ def summary(df):
     return {'d': d, 'n': len(d), 'gap_k': int(d['gap_ok'].sum()), 'ses_k': int(d['ses_ok'].sum()),
             'against': len(against), 'back': back, 'luck_ses': _luck(int(d['ses_ok'].sum()), len(d)),
             'luck_back': _luck(back, len(against)),
-            'reversal': float((np.sign(df['gap']) != np.sign(df['session'])).mean()) if len(df) else float('nan')}
+            'reversal': float((np.sign(df['gap']) != np.sign(df['session'])).mean()) if len(df) else float('nan'),
+            'fade': _fade(df)}
+
+
+def _fade(df):
+    """Bet against the overnight jump during the next session (no sentiment): average, hit rate and p-value."""
+    d = df.dropna(subset=['gap', 'session'])
+    if len(d) < 10:
+        return None
+    from scipy import stats
+    f = -np.sign(d['gap']) * d['session']
+    return {'mean': float(f.mean()), 'hit': float((f > 0).mean()), 'p': float(stats.ttest_1samp(f, 0).pvalue), 'n': len(d)}
 
 
 def story_chapter(chapter, so_what):
@@ -86,6 +97,11 @@ def story_chapter(chapter, so_what):
                     f'toward the tone during the next session in <b>{s["back"]} of {s["against"]}</b>. '
                     f'Overall, the session reversed the overnight jump in <b>{s["reversal"]:.0%}</b> of calls.',
                     unsafe_allow_html=True)
+    if s['fade']:
+        f = s['fade']
+        st.markdown(f'<b>Timing, not tone:</b> betting against the overnight jump during the next session (buying after a drop, '
+                    f'selling after a rise) averaged <b>{f["mean"]:+.2%}</b> per call against the market, before costs, and worked in '
+                    f'{f["hit"]:.0%} of {f["n"]} calls (p-value {f["p"]:.2f}).', unsafe_allow_html=True)
     if s['ses_k'] > s['gap_k'] and s['luck_ses'] < 0.05:
         msg = ('The readjustment followed the tone more often than the first reaction did. That fits the idea that the '
                'fast first move reacts to the numbers, and people then adjust once they have heard how management sounded.')

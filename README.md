@@ -32,6 +32,10 @@
 >   ranking by any method, script-vs-live and management-vs-analyst change bars, an average Q&A-start marker (`qa_start`, saved by the
 >   pipeline) and stacked over-time charts by sector. Set `EXPLORER_V2 = False` in `features.py` to show the original page
 >   (`views/explorer_classic.py`).
+> - **Tone vs. the company's usual and timing (Section 5 feedback):** `tone_vs_usual` = a call's overall score minus the average of the
+>   same company's earlier calls only (no look-ahead). Shown on the story page (chapter 5), in Story mode and as a row in the Market
+>   reaction strategy table, which now labels its windows (days +2 to +5, +2 to +21) and adds 'bet against the overnight jump'.
+>   Set `SHOW_TONE_SURPRISE = False` in `features.py` to hide the tone comparison.
 > - **Full rollback:** the branch `backup/v2-before-gap-study` holds version 2 exactly as it was before these add-ons.
 >
 > Everything below describes the shared method and pipeline.

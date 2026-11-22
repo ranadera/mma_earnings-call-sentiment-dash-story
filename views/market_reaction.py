@@ -27,7 +27,8 @@ bench_choice = c1.radio('Compare each stock with', ['S&P 500 (SPY)', 'Its sector
 c2.markdown('<div class="qm-note" style="margin-top:4px">Comparing with the sector ETF asks a sharper question: did the bank beat <i>other banks</i>? '
             'Comparing with the S&amp;P 500 asks whether it beat the market as a whole.</div>', unsafe_allow_html=True)
 
-calls = bench[['call_id', 'ticker', 'call_date', 'sector', 'signal', 'label', 'composite', 'lm_tone', 'tone_shift', 'conviction_score', 'analyst_neg_rate']].copy()
+calls = bench[['call_id', 'ticker', 'call_date', 'sector', 'signal', 'label', 'composite', 'lm_tone', 'tone_shift', 'conviction_score', 'analyst_neg_rate',
+               'tone_vs_usual']].copy()
 with st.spinner('Fetching prices for all benchmark calls (first load takes a few seconds)...'):
     if bench_choice.startswith('S&P'):
         cars, paths, source = mk.benchmark_event_study(calls[['call_id', 'ticker', 'call_date']])
@@ -114,9 +115,15 @@ ui.section('03 · STRATEGY', 'Could sentiment drive a long-short strategy?',
            'entering at the close the day after the call, hedged against the benchmark, with no trading costs.')
 data['sig_shift'] = pd.qcut(data['tone_shift'], 3, labels=['Negative', 'Neutral', 'Positive'])
 data['sig_conv'] = pd.qcut(data['conviction_score'], 3, labels=['Negative', 'Neutral', 'Positive'])
+import features
+signals = [('Overall sentiment', 'signal'), ('Tone change into Q&A', 'sig_shift'), ('Management conviction', 'sig_conv')]
+if getattr(features, 'SHOW_TONE_SURPRISE', False) and data['tone_vs_usual'].notna().sum() >= 15:
+    has = data['tone_vs_usual'].notna()
+    data.loc[has, 'sig_usual'] = pd.qcut(data.loc[has, 'tone_vs_usual'], 3, labels=['Negative', 'Neutral', 'Positive']).astype(str)
+    signals.append(("Tone vs. company's usual", 'sig_usual'))
 rows = []
-for name, col in [('Overall sentiment', 'signal'), ('Tone change into Q&A', 'sig_shift'), ('Management conviction', 'sig_conv')]:
-    for hold, ret in [('1 week', 'hold_week'), ('1 month', 'car_drift')]:
+for name, col in signals:
+    for hold, ret in [('Days +2 to +5 (1 week)', 'hold_week'), ('Days +2 to +21 (1 month)', 'car_drift')]:
         r = mk.long_short(data, col, ret)
         if r:
             rows.append({'Signal': name, 'Holding': hold, 'Long leg': r['long'], 'Short leg': r['short'], 'Long-short return': r['spread'],
@@ -132,9 +139,34 @@ if not ls.empty:
     st.dataframe(pretty, hide_index=True, width='stretch')
     best = ls.sort_values('Long-short return', ascending=False).iloc[0]
     ui.note(f'Best combination: <b>{best["Signal"]}</b> held for <b>{best["Holding"]}</b>, returning <b>{best["Long-short return"]:+.2%}</b> per trade '
-            f'(p-value {best["p-value"]:.3f}). Week holding = days +2 to +5; month = days +2 to +21.')
-ui.warn('<b>Read with care.</b> About 20 calls, clustered in the same weeks, no transaction or shorting costs. '
-        'These results show how the test works; a real strategy needs hundreds of calls across several years. Not investment advice.')
+            f'(p-value {best["p-value"]:.3f}). Day 0 is the call; trades start at the close of day +1, after the first reaction.')
+    if "Tone vs. company's usual" in set(ls['Signal']):
+        st.caption("Tone vs. company's usual: each call's overall score minus the average of the same company's earlier calls only "
+                   f"(no look-ahead), so only the {int(data['tone_vs_usual'].notna().sum())} calls with an earlier call from the same company are used.")
+
+# ---- timing: bet against the overnight jump (uses the gap study; daily open/close prices)
+if getattr(features, 'SHOW_GAP_STUDY', False):
+    import gap_view
+    gs = gap_view.load()
+    if gs is not None:
+        gg = gs[gs['call_id'].isin(data['call_id'])].dropna(subset=['gap', 'session'])
+        if len(gg) >= 10:
+            from scipy import stats
+            fade = -np.sign(gg['gap']) * gg['session']
+            p = stats.ttest_1samp(fade, 0).pvalue
+            st.markdown(f'<h4 style="color:{ui.SMITH_BLUE};margin:22px 0 4px">Timing: bet against the overnight jump</h4>', unsafe_allow_html=True)
+            c1, c2, c3 = st.columns(3)
+            with c1:
+                ui.kpi('Average per call', f'{fade.mean():+.2%}', 'Buy at the open after an overnight drop (sell short after a jump), '
+                       'close at the end of that session. Against the S&P 500, before costs.', color=ui.OLIVE if fade.mean() > 0 else ui.ROSE)
+            with c2:
+                ui.kpi('Worked in', f'{(fade > 0).mean():.0%} of calls', f'{len(gg)} calls with daily open and close prices.', color=ui.SKY)
+            with c3:
+                ui.kpi('p-value', f'{p:.3f}', 'Below 0.05 = unlikely to be luck alone, but this is one of several ideas we tested.', color=ui.PUMPKIN)
+            st.caption('This uses no sentiment at all: it tests whether the first reaction overshoots and the stock partly readjusts during the day.')
+
+ui.warn(f'<b>Read with care.</b> {len(data)} calls, clustered in the same weeks, no transaction or shorting costs, and we tested several ideas, '
+        'so one good result can still be luck. A real strategy needs hundreds of calls across several years. Not investment advice.')
 
 ui.section('04 · PREDICTIVE MODEL', 'Train on one year, test on the next',
            'A logistic regression learns from the sentiment measures of earlier calls whether a stock beat the market, '

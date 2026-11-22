@@ -27,3 +27,7 @@ APP_URL = None
 # Benchmark explorer layout. True = team-feedback layout (sectors first, method comparison, change bars, Q&A marker,
 # stacked over-time charts). False = the original page (views/explorer_classic.py).
 EXPLORER_V2 = True
+
+# "Tone vs. the company's usual": each call compared with the same company's EARLIER calls (no look-ahead).
+# Shown on the story page (chapter 5), in Story mode and as a row in the Market reaction strategy table. False hides it.
+SHOW_TONE_SURPRISE = True
