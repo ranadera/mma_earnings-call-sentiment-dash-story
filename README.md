@@ -527,4 +527,4 @@ All references and links were checked against the original sources.
 
 ## Balanced banks vs. tech
 
-The data update runs the pipeline with `--balance-sectors`, so banks and tech have the same number of calls. The larger sector is trimmed: first calls dated outside the other sector's date range, then the oldest call of the company with the most calls. The run log lists every call left out ("Balanced out"). To use every call again, remove `--balance-sectors` from `.github/workflows/update-app-data.yml` in the private transcripts repo.
+The data update runs the pipeline with `--balance-sectors`, so banks and tech have the same number of calls. The larger sector is trimmed: first calls dated outside the other sector's date range, then the oldest call of the company with the most calls. The run log lists every call left out ("Balanced out"). To use every call again, remove `--balance-sectors` from `.github/workflows/update-app.yml` in the private transcripts repo.
