@@ -31,3 +31,7 @@ EXPLORER_V2 = True
 # "Tone vs. the company's usual": each call compared with the same company's EARLIER calls (no look-ahead).
 # Shown on the story page (chapter 5), in Story mode and as a row in the Market reaction strategy table. False hides it.
 SHOW_TONE_SURPRISE = True
+
+# Scanned PDFs uploaded on the Analyze page are read with text recognition (OCR, needs packages.txt).
+# Set to False to show the "no readable text" message instead.
+OCR_UPLOADS = True

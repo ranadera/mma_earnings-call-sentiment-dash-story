@@ -10,6 +10,7 @@ import streamlit as st
 import data_access as da
 import features
 import market as mk
+import ocr
 import sentiment_core as sc
 import ui
 from ui import esc, term
@@ -52,6 +53,19 @@ def new_analysis_button(key, **kw):
 
 
 NONCE = st.session_state.get('nonce', 0)  # part of the input keys, so a new analysis gets fresh, empty inputs
+ocr_box = st.empty()   # progress of text recognition for scanned PDFs, shown on the main page (visible on phones too)
+
+
+def read_scanned(name, data):
+    """If the PDF is a scan and OCR is available, return ('<name>.txt', text bytes); otherwise the file unchanged."""
+    if not (getattr(features, 'OCR_UPLOADS', False) and ocr.is_scanned(name, data) and ocr.available()):
+        return name, data
+    n = ocr.page_count(data)
+    with ocr_box.container():
+        bar = st.progress(0.0, text=f'Scanned PDF: reading {n} pages with text recognition. This takes about a minute...')
+        text = ocr.to_text(data, lambda d, t: bar.progress(d / t, text=f'Scanned PDF: reading page {d} of {t}...'))
+    ocr_box.empty()
+    return os.path.splitext(name)[0] + '_OCR.txt', text.encode('utf-8')
 
 with st.sidebar:
     st.markdown('<div class="qm-side-brand">QUANTA-MENTALS<span>Call analyzer</span></div>', unsafe_allow_html=True)
@@ -88,6 +102,7 @@ with st.sidebar:
             name, data = 'pasted.txt', text.encode('utf-8')
 
     if data:
+        name, data = read_scanned(name, data)
         new_analysis_button('new_side', width='stretch')
     st.markdown('<p class="qm-side-h">2 · Company</p>', unsafe_allow_html=True)
     auto = detect_meta(name, data) if data else {'ticker': '', 'call_date': '', 'company': ''}
@@ -154,9 +169,10 @@ lex_sector = sector or detected
 
 meta, fmt, scored, segs, qa_start = analyse(name, data, lex_sector)
 if scored.empty or scored['n_words'].sum() < 200:
-    ui.warn('<b>No readable text in this file.</b> It looks like a scanned PDF (pictures of pages rather than text), '
-            'so there are no words to score. Please use the text version of the transcript (from Bloomberg, LSEG or the '
-            'company\'s investor-relations site), or run the PDF through text recognition (OCR) first.')
+    how = ('and text recognition could not read it' if getattr(features, 'OCR_UPLOADS', False) and ocr.available()
+           else 'so there are no words to score')
+    ui.warn(f'<b>No readable text in this file.</b> It looks like a scanned PDF (pictures of pages rather than text), {how}. '
+            'Please use the text version of the transcript (from Bloomberg, LSEG or the company\'s investor-relations site).')
     st.stop()
 
 res = sc.score_call(scored, bench, sector)
