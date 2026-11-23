@@ -6,8 +6,7 @@
   ],
   "test_year": 2024,
   "later_years": [
-    2025,
-    2026
+    2025
   ],
   "targets": {
     "car_day": {
@@ -18,18 +17,18 @@
       "accuracy": 0.2916666666666667,
       "baseline_accuracy": 0.6296296296296297,
       "auc": 0.36363636363636365,
-      "long_short": -0.03786943004393763,
+      "long_short": -0.03786949740843504,
       "coefficients": {
-        "lm_tone": -0.016350005206694686,
-        "lm_tone_sector": -0.3087518227495017,
-        "composite": 0.2595786858031202,
-        "tone_shift": -0.07894285737953785,
-        "conviction_score": -0.4871120505884384,
-        "analyst_neg_rate": 0.5217618387519182,
-        "hedging": 0.2902697093289337
+        "lm_tone": -0.022211771346318483,
+        "lm_tone_sector": -0.3125219384684067,
+        "composite": 0.2637014920365923,
+        "tone_shift": -0.06470074274973328,
+        "conviction_score": -0.4826003908931284,
+        "analyst_neg_rate": 0.5178092325931057,
+        "hedging": 0.3051917276285485
       },
-      "later_accuracy": 0.5,
-      "n_later": 26
+      "later_accuracy": 0.2,
+      "n_later": 5
     },
     "car_drift": {
       "label": "Drift: beats the market from day +2 to +21 (tradable after the call)",
@@ -38,21 +37,21 @@
       "n_test": 24,
       "accuracy": 0.5416666666666666,
       "baseline_accuracy": 0.5925925925925926,
-      "auc": 0.40559440559440557,
-      "long_short": -0.04945090032861851,
+      "auc": 0.41258741258741255,
+      "long_short": -0.04945079402939778,
       "coefficients": {
-        "lm_tone": 0.18016584156672802,
-        "lm_tone_sector": 0.07933481610234658,
-        "composite": 0.35551165579486677,
-        "tone_shift": -0.23669013115597295,
-        "conviction_score": 0.29766265489806354,
-        "analyst_neg_rate": -0.3154303324439562,
-        "hedging": 0.2095071180224029
+        "lm_tone": 0.17843976500285116,
+        "lm_tone_sector": 0.07832841470415666,
+        "composite": 0.36788155349238105,
+        "tone_shift": -0.24174425756969578,
+        "conviction_score": 0.29097507874028644,
+        "analyst_neg_rate": -0.31076004575708577,
+        "hedging": 0.19763050902198342
       },
-      "later_accuracy": 0.46153846153846156,
-      "n_later": 26
+      "later_accuracy": 0.4,
+      "n_later": 5
     }
   },
-  "updated": "2026-11-20 23:03 UTC",
-  "calls": 77
+  "updated": "2026-11-23 02:46 UTC",
+  "calls": 56
 }
