@@ -535,4 +535,4 @@ A scanned PDF (pictures of pages) uploaded on the Analyze page is read with text
 
 ## Beyond the numbers (EPS surprise)
 
-`pipeline/eps_surprise.py` (run by the data update) fetches each call's consensus EPS estimate and reported EPS from Yahoo Finance (Bloomberg numbers can be added in the private repo's `eps_manual.csv`) and tests whether tone adds anything beyond the earnings surprise. `surprise_view.py` shows the result as section 04 of the Market reaction page and as Chapter 4 · Part 3 of the story. Switch: `SHOW_SURPRISE_TEST` in `features.py`.
+`pipeline/eps_surprise.py` (run by the data update) fetches each call's consensus EPS estimate and reported EPS from Yahoo Finance (Bloomberg numbers can be added in the private repo's `eps_manual.csv`) and tests whether tone adds anything beyond the earnings surprise. `surprise_view.py` shows it on its own page, "Beyond the Beat" (`views/beyond_beat.py`, in the top menu), as a callout under the Short Answer on the story page, as Chapter 4 · Part 3 of the story and as section 04 of the Market reaction page. Switch: `SHOW_SURPRISE_TEST` in `features.py`.

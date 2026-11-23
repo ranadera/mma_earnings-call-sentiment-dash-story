@@ -51,12 +51,20 @@ def _meta_pair(eps):
     return m.sort_values('call_date') if len(m) == 2 else None
 
 
+def link(label):
+    """Link to the Beyond the Beat page (falls back to a plain link when the page is opened on its own)."""
+    try:
+        st.page_link('views/beyond_beat.py', label=label, icon=':material/arrow_forward:')
+    except Exception:
+        st.markdown(f'<a href="beyond-the-beat" target="_self" style="font-weight:700">→ {label}</a>', unsafe_allow_html=True)
+
+
 def page_section(num):
     res, eps = load()
     if res is None:
         return
     n = res['calls_with_surprise']
-    ui.section(f'{num} · BEYOND THE NUMBERS', 'Does tone add anything beyond the earnings surprise?',
+    ui.section(f'{num} · BEYOND THE BEAT' if num else 'THE TEST', 'Do the words matter once you know the numbers?',
                'Before each call, analysts publish a consensus estimate of earnings per share (EPS). The <b>surprise</b> is how far '
                'the reported EPS came in above or below it. If confident tone only reflects a good quarter, tone should add nothing '
                'once we know the surprise. We test that with a regression of the stock\'s move (against the S&amp;P 500) on the '
@@ -140,8 +148,8 @@ def story_chapter(chapter, so_what):
     day, drift = _best(res, 'car_day'), _best(res, 'car_drift')
     if not day:
         return
-    chapter('numbers', 'CHAPTER 4 · PART 3',
-            f"Beyond the numbers: {res['beats']} of {n} calls beat the earnings estimate, but the beat explained only "
+    chapter('beat', 'CHAPTER 4 · PART 3 · BEYOND THE BEAT',
+            f"Beyond the beat: {res['beats']} of {n} calls beat the earnings estimate, but the beat explained only "
             f"{day['r2_s']:.0%} of the two-day move",
             'A fair challenge: maybe a confident CEO just reflects a good quarter. So we added the <b>earnings surprise</b>: reported '
             'earnings per share against what analysts expected. Tone and the surprise turn out to be nearly unrelated '
@@ -163,3 +171,41 @@ def story_chapter(chapter, so_what):
     else:
         so_what('In the first two days, neither the beat nor the tone explains much: the market prices the outlook, not last '
                 'quarter\'s numbers.')
+    link('See the full test: Beyond the Beat')
+
+
+def headline():
+    """One sentence for the top of the story page, or None."""
+    res, eps = load()
+    if res is None:
+        return None
+    drift = _best(res, 'car_drift')
+    if drift and drift['p'] < 0.05 and drift['coef'] > 0:
+        return (f"Beating the estimate explained little of the first reaction ({res['beats']} of {res['calls_with_surprise']} calls beat). "
+                f"But in the month after the call, a company sounding more upbeat than its usual self predicted a better stock "
+                f"move, even holding the earnings surprise fixed (p-value {drift['p']:.3f}). The words carry information the numbers do not.")
+    return (f"Beating the estimate explained little of the first reaction ({res['beats']} of {res['calls_with_surprise']} calls beat), "
+            'and tone added little beyond it.')
+
+
+def scatter():
+    """Each call: earnings surprise vs. the two-day move, Meta's two 2024 calls labelled."""
+    res, eps = load()
+    if res is None:
+        return
+    d = eps.dropna(subset=['surprise_pct', 'car_day']).copy()
+    d['surprise'] = d['surprise_pct'].clip(-res['cap_pct'], res['cap_pct'])
+    d['move'] = d['car_day'] * 100
+    d['label'] = d['ticker'] + ' ' + pd.to_datetime(d['call_date']).dt.strftime('%b %Y')
+    d['meta'] = d['call_id'].isin(['META_2024-02-01', 'META_2024-04-24'])
+    base = alt.Chart(d).encode(
+        x=alt.X('surprise:Q', title='Earnings surprise: reported EPS vs. the estimate (%, capped at ±50%)'),
+        y=alt.Y('move:Q', title='Stock vs. the market, call day and next day (%)'),
+        tooltip=[alt.Tooltip('label:N', title='Call'), alt.Tooltip('surprise_pct:Q', title='Surprise (%)', format='+.1f'),
+                 alt.Tooltip('move:Q', title='2-day move (%)', format='+.1f')])
+    dots = base.mark_circle(size=70, opacity=0.75).encode(
+        color=alt.condition('datum.meta', alt.value(ui.ROSE), alt.value(ui.AZURE)))
+    labels = base.transform_filter('datum.meta').mark_text(align='left', dx=8, fontWeight='bold', color=ui.ROSE).encode(text='label:N')
+    zero = alt.Chart(pd.DataFrame({'y': [0]})).mark_rule(color='#9AA3B2', strokeDash=[4, 4]).encode(y='y:Q')
+    st.altair_chart((zero + dots + labels).properties(height=360, title='Each dot is a call: a bigger beat did not mean a bigger jump'),
+                    width='stretch')

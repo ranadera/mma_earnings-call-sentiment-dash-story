@@ -114,6 +114,14 @@ else:
 st.markdown(f'<div class="qs-answer"><div class="k">THE SHORT ANSWER</div><div class="a">{esc(answer)}</div><p>{answer_body}</p></div>',
             unsafe_allow_html=True)
 
+if getattr(features, 'SHOW_SURPRISE_TEST', False):
+    import surprise_view
+    _beat = surprise_view.headline()
+    if _beat:
+        st.markdown(f'<div class="qs-answer" style="border-color:{ui.OLIVE}"><div class="k">BEYOND THE BEAT</div>'
+                    f'<div class="a">But the words do carry information.</div><p>{_beat}</p></div>', unsafe_allow_html=True)
+        surprise_view.link('See the test: Beyond the Beat')
+
 st.markdown('<div class="qs-chapters">' + ''.join(f'<a href="#{a}" target="_self"><b>{i}</b>{t}</a>' for i, (a, t) in enumerate([
     ('listened', 'What we listened to'), ('script', 'Script vs. live Q&amp;A'), ('language', 'Banks vs. tech'),
     ('market', 'Did the market listen?'), ('trade', 'Can you trade it?'), ('means', 'What it means'), ('next', 'Try it yourself')], 1))

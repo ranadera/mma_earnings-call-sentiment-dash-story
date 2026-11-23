@@ -172,6 +172,7 @@ _n = '04'
 if getattr(features, 'SHOW_SURPRISE_TEST', False):
     import surprise_view
     surprise_view.page_section('04')
+    surprise_view.link('Open the full page: Beyond the Beat')
     _n = '05'
 
 ui.section(f'{_n} · PREDICTIVE MODEL', 'Train on one year, test on the next',

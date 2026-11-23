@@ -32,6 +32,8 @@ def new_analysis():
 
 pages = {
     '': [st.Page('views/story.py', title='The story', icon=':material/auto_stories:', default=True),
+         *([st.Page('views/beyond_beat.py', title='Beyond the Beat', icon=':material/insights:', url_path='beyond-the-beat')]
+           if getattr(features, 'SHOW_SURPRISE_TEST', False) else []),
          analyze_page,
          st.Page(new_analysis, title='New analysis', icon=':material/restart_alt:', url_path='new')],
     'Details': [
