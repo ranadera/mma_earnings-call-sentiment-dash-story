@@ -38,7 +38,34 @@ def folder_sector(dataset):
 
 
 # ---------- 1. Read and score every transcript ----------
-def score_all(root, data_dir):
+def balance_sectors(calls):
+    """Trim the larger sector so banks and tech have the same number of calls.
+    Drops first the calls dated outside the smaller sector's date range, then the
+    oldest call of whichever company has the most calls. Returns (kept, dropped)."""
+    sizes = calls['sector'].value_counts()
+    if len(sizes) < 2:
+        return calls, calls.iloc[0:0]
+    small, big = sizes.idxmin(), sizes.idxmax()
+    n = sizes.min()
+    dates = pd.to_datetime(calls['call_date'])
+    lo, hi = dates[calls['sector'] == small].min(), dates[calls['sector'] == small].max()
+    keep = calls.index[calls['sector'] == big].tolist()
+    drop = []
+    while len(keep) > n:
+        d = dates.loc[keep]
+        gap = (lo - d).clip(lower=pd.Timedelta(0)) + (d - hi).clip(lower=pd.Timedelta(0))
+        if gap.max() > pd.Timedelta(0):
+            i = gap.idxmax()
+        else:
+            counts = calls.loc[keep, 'ticker'].value_counts()
+            top = sorted(counts[counts == counts.max()].index)[0]
+            i = d[calls.loc[keep, 'ticker'] == top].idxmin()
+        keep.remove(i)
+        drop.append(i)
+    return calls.drop(index=drop), calls.loc[drop]
+
+
+def score_all(root, data_dir, balance=False):
     lm = sc.load_lm(os.path.join(data_dir, 'LM_MasterDictionary.csv'))
     smap = sc.load_sector_map(os.path.join(data_dir, 'sector_map.csv'))
     lexicon = sc.load_sector_lexicon(os.path.join(data_dir, 'sector_lexicon.csv'))
@@ -90,6 +117,11 @@ def score_all(root, data_dir):
     calls = pd.DataFrame(calls)
     if calls.empty:
         raise SystemExit('No transcripts could be scored.')
+    if balance:
+        calls, dropped = balance_sectors(calls)
+        for _, r in dropped.sort_values(['ticker', 'call_date']).iterrows():
+            print(f"Balanced out (sector has more calls): {r['call_id']}")
+        seg_rows = [r for r in seg_rows if r['call_id'] in set(calls['call_id'])]
 
     full = calls['is_transcript']
     calls['tone_shift'] = calls['qa_mgmt_tone'] - calls['pres_tone']
@@ -232,10 +264,12 @@ def main():
     ap.add_argument('--transcripts', required=True)
     ap.add_argument('--out', default='data')
     ap.add_argument('--no-prices', action='store_true')
+    ap.add_argument('--balance-sectors', action='store_true',
+                    help='Keep the same number of bank and tech calls (trims the larger sector; see balance_sectors)')
     ap.add_argument('--extra-prices', help='CSV of daily closing prices (date column, one column per ticker), e.g. from Bloomberg')
     args = ap.parse_args()
 
-    calls, segs = score_all(args.transcripts, args.out)
+    calls, segs = score_all(args.transcripts, args.out, balance=args.balance_sectors)
     calls.to_csv(os.path.join(args.out, 'call_sentiment.csv'), index=False)
     segs.to_csv(os.path.join(args.out, 'segment_tone.csv'), index=False)
     print(f'\n{len(calls)} calls scored:', calls.groupby(['dataset', 'sector']).size().to_dict())

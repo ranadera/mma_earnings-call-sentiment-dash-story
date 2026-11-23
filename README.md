@@ -524,3 +524,7 @@ All references and links were checked against the original sources.
 ---
 
 *Quanta-Mentals · Group 9 · MMA 823: Analytics for Financial Markets · Smith School of Business, Queen's University*
+
+## Balanced banks vs. tech
+
+The data update runs the pipeline with `--balance-sectors`, so banks and tech have the same number of calls. The larger sector is trimmed: first calls dated outside the other sector's date range, then the oldest call of the company with the most calls. The run log lists every call left out ("Balanced out"). To use every call again, remove `--balance-sectors` from `.github/workflows/update-app-data.yml` in the private transcripts repo.
