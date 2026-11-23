@@ -50,7 +50,10 @@ def fetch_yahoo(tickers):
         d = d.reset_index()
         date_col = d.columns[0]
         for _, r in d.iterrows():
-            rows.append({'ticker': t, 'eps_date': pd.Timestamp(r[date_col]).tz_localize(None).normalize(),
+            ts = pd.Timestamp(r[date_col])
+            if ts.tzinfo is not None:
+                ts = ts.tz_localize(None)
+            rows.append({'ticker': t, 'eps_date': ts.normalize(),
                          'eps_estimate': r.get('EPS Estimate'), 'eps_actual': r.get('Reported EPS')})
     return pd.DataFrame(rows, columns=['ticker', 'eps_date', 'eps_estimate', 'eps_actual'])
 
@@ -148,9 +151,11 @@ def main():
     except Exception as e:
         print('Could not fetch EPS estimates from Yahoo Finance:', e)
         yahoo = pd.DataFrame(columns=['ticker', 'eps_date', 'eps_estimate', 'eps_actual'])
+    print(f'Yahoo Finance: {len(yahoo)} earnings dates for {yahoo["ticker"].nunique()} companies.')
     eps = match(calls, yahoo)
     if args.manual and os.path.exists(args.manual):
-        man = pd.read_csv(args.manual, parse_dates=['call_date']).dropna(subset=['eps_estimate', 'eps_actual'])
+        man = pd.read_csv(args.manual).dropna(subset=['eps_estimate', 'eps_actual'])
+        man['call_date'] = pd.to_datetime(man['call_date'])
         man['call_id'] = man['ticker'].str.upper() + '_' + man['call_date'].dt.strftime('%Y-%m-%d')
         man['source'] = man['source'] if 'source' in man else 'Manual'
         eps = pd.concat([eps[~eps['call_id'].isin(man['call_id'])], man[['call_id', 'eps_estimate', 'eps_actual', 'source']]])
