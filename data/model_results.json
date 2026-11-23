@@ -16,15 +16,15 @@
       "accuracy": 0.48717948717948717,
       "baseline_accuracy": 0.5757575757575758,
       "auc": 0.5921052631578947,
-      "long_short": 0.007540347172310326,
+      "long_short": 0.007540391144529517,
       "coefficients": {
-        "lm_tone": 0.3484686437933072,
-        "lm_tone_sector": 0.20589906893926627,
-        "composite": -0.1882923979566324,
-        "tone_shift": 0.3407750921387906,
-        "conviction_score": -1.0892221775187683,
-        "analyst_neg_rate": 0.11762908562195146,
-        "hedging": 0.11666103144397434
+        "lm_tone": 0.3484686437933073,
+        "lm_tone_sector": 0.20589906893926618,
+        "composite": -0.1882923979566325,
+        "tone_shift": 0.34077509213879026,
+        "conviction_score": -1.089222177518768,
+        "analyst_neg_rate": 0.11762908562195162,
+        "hedging": 0.11666103144397418
       },
       "later_accuracy": 0.375,
       "n_later": 8
@@ -37,20 +37,20 @@
       "accuracy": 0.5384615384615384,
       "baseline_accuracy": 0.5454545454545454,
       "auc": 0.5132275132275133,
-      "long_short": -0.022103195447542603,
+      "long_short": -0.022103137445290588,
       "coefficients": {
         "lm_tone": 0.22571804624594816,
-        "lm_tone_sector": -0.016490391880938742,
-        "composite": 0.7041424669200946,
-        "tone_shift": 0.3403841347358882,
-        "conviction_score": -0.18349009869012245,
-        "analyst_neg_rate": -0.27666711635486385,
-        "hedging": 0.02022632699835133
+        "lm_tone_sector": -0.016490391880938572,
+        "composite": 0.7041424669200945,
+        "tone_shift": 0.3403841347358883,
+        "conviction_score": -0.18349009869012237,
+        "analyst_neg_rate": -0.27666711635486374,
+        "hedging": 0.020226326998351377
       },
       "later_accuracy": 0.5,
       "n_later": 8
     }
   },
-  "updated": "2026-11-23 20:04 UTC",
+  "updated": "2026-11-23 20:08 UTC",
   "calls": 80
 }
