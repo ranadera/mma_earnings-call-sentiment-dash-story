@@ -55,7 +55,9 @@ def fetch_yahoo(tickers):
                 ts = ts.tz_localize(None)
             rows.append({'ticker': t, 'eps_date': ts.normalize(),
                          'eps_estimate': r.get('EPS Estimate'), 'eps_actual': r.get('Reported EPS')})
-    return pd.DataFrame(rows, columns=['ticker', 'eps_date', 'eps_estimate', 'eps_actual'])
+    out = pd.DataFrame(rows, columns=['ticker', 'eps_date', 'eps_estimate', 'eps_actual'])
+    out['eps_date'] = pd.to_datetime(out['eps_date'])
+    return out
 
 
 def match(calls, yahoo):
@@ -151,6 +153,7 @@ def main():
     except Exception as e:
         print('Could not fetch EPS estimates from Yahoo Finance:', e)
         yahoo = pd.DataFrame(columns=['ticker', 'eps_date', 'eps_estimate', 'eps_actual'])
+    yahoo['eps_date'] = pd.to_datetime(yahoo['eps_date'])
     print(f'Yahoo Finance: {len(yahoo)} earnings dates for {yahoo["ticker"].nunique()} companies.')
     eps = match(calls, yahoo)
     if args.manual and os.path.exists(args.manual):
