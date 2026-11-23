@@ -74,7 +74,7 @@ with st.sidebar:
         else:
             st.warning('Sample file not found.')
     elif source == 'Upload a file':
-        f = st.file_uploader('PDF or text file', type=['pdf', 'txt'], key=f'side_upload_{NONCE}', help='Bloomberg and LSEG PDFs are read automatically, including the ticker and date.')
+        f = st.file_uploader('PDF or text file', type=['pdf', 'txt'], key=f'side_upload_{NONCE}', help='Bloomberg, LSEG, company investor-relations and Motley Fool transcripts are read automatically, including the ticker and date.')
         if f is not None:
             name, data = f.name, f.getvalue()
         elif st.session_state.get('main_file'):  # uploaded from the main page (phones, where this panel starts hidden)

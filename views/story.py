@@ -121,7 +121,7 @@ st.markdown('<div class="qs-chapters">' + ''.join(f'<a href="#{a}" target="_self
 
 # ---------------------------------------------------------------- 1. what we listened to
 chapter('listened', 'CHAPTER 1', f'We listened to {n_calls} earnings calls from {n_cos} companies',
-        f'Transcripts from Bloomberg and LSEG, {first:%B %Y} to {last:%B %Y}. Each call was split into the scripted remarks, '
+        f'Transcripts from Bloomberg, company investor-relations sites and Motley Fool, {first:%B %Y} to {last:%B %Y}. Each call was split into the scripted remarks, '
         "management's live answers and the analysts' questions, then scored word by word with a finance dictionary.")
 st.markdown('<div class="qs-big">'
             f'<div><div class="v">{n_calls}</div><div class="l">earnings calls read and scored</div></div>'

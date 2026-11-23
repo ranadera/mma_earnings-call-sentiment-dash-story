@@ -28,7 +28,7 @@ c1, c2, c3 = st.columns(3)
 with c1:
     ui.card('The question', 'Can we measure how confident or cautious management sounds, and does that tone line up with how the stock performs after the call?', tag='Why')
 with c2:
-    ui.card('The data', f'{len(bench)} earnings call transcripts from Bloomberg and LSEG, across {len(calibrated)} sectors '
+    ui.card('The data', f'{len(bench)} earnings call transcripts (Bloomberg, company investor-relations sites, Motley Fool), across {len(calibrated)} sectors '
             f'({", ".join(f"{counts[s]} {s.lower()}" for s in calibrated)}), plus daily stock prices around each call.', tag='What')
 with c3:
     ui.card('The output', 'Sentiment indicators, a market-reaction test, one-page stock reports, and this app, which scores any new transcript in seconds.', tag='Deliverables')
