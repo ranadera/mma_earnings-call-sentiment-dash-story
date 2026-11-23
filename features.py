@@ -34,4 +34,4 @@ SHOW_TONE_SURPRISE = True
 
 # Scanned PDFs uploaded on the Analyze page are read with text recognition (OCR, needs packages.txt).
 # Set to False to show the "no readable text" message instead.
-OCR_UPLOADS = True
+OCR_UPLOADS = False   # off for the demo: scans show a quick message instead of slowing the app
