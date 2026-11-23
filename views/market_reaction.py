@@ -168,7 +168,13 @@ if getattr(features, 'SHOW_GAP_STUDY', False):
 ui.warn(f'<b>Read with care.</b> {len(data)} calls, clustered in the same weeks, no transaction or shorting costs, and we tested several ideas, '
         'so one good result can still be luck. A real strategy needs hundreds of calls across several years. Not investment advice.')
 
-ui.section('04 · PREDICTIVE MODEL', 'Train on one year, test on the next',
+_n = '04'
+if getattr(features, 'SHOW_SURPRISE_TEST', False):
+    import surprise_view
+    surprise_view.page_section('04')
+    _n = '05'
+
+ui.section(f'{_n} · PREDICTIVE MODEL', 'Train on one year, test on the next',
            'A logistic regression learns from the sentiment measures of earlier calls whether a stock beat the market, '
            'then predicts calls it has never seen. Testing on a later year is the honest way to check a trading signal: '
            'nothing from the test year is used in training.')

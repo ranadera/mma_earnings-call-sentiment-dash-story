@@ -259,6 +259,9 @@ else:
 if features.SHOW_GAP_STUDY:
     import gap_view
     gap_view.story_chapter(chapter, so_what)
+if getattr(features, 'SHOW_SURPRISE_TEST', False):
+    import surprise_view
+    surprise_view.story_chapter(chapter, so_what)
 
 # ---------------------------------------------------------------- 5. can you trade it?
 mr = da.model_results() or {}
@@ -342,8 +345,11 @@ if lead and lead['p'] < 0.05 and lead['spread'] > 0:
     takes.append('<b>Watch for a change in the accent.</b> How upbeat a company sounds is mostly its style. Sounding different from its '
                  'usual self was our most promising signal, and it is worth testing on more calls.')
 st.markdown('<div class="qs-take">' + ''.join(f'<div>{t}</div>' for t in takes) + '</div>', unsafe_allow_html=True)
+_others = ('We control for the earnings surprise, but guidance, interest rates, sector news and the wider economy also move stocks and are not '
+           'modelled here.' if getattr(features, 'SHOW_SURPRISE_TEST', False) else
+           'Earnings surprises, guidance, interest rates, sector news and the wider economy also move stocks and are not modelled here.')
 st.markdown(f"""<div class="qm-limits"><b>What we are not claiming.</b> We measure words, not intent, and we compare each stock with the market
-only. Earnings surprises, guidance, interest rates, sector news and the wider economy also move stocks and are not modelled here.
+only. {_others}
 With {n_calls} calls the results are a first look, not proof. This is a student research project, <b>not financial advice</b>.</div>""",
             unsafe_allow_html=True)
 

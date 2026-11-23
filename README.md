@@ -532,3 +532,7 @@ The data update runs the pipeline with `--balance-sectors`, so banks and tech ha
 ## Scanned PDFs on the Analyze page
 
 A scanned PDF (pictures of pages) uploaded on the Analyze page is read with text recognition (OCR): `ocr.py`, using tesseract and poppler from `packages.txt`. A progress bar shows the pages being read (about a minute for a 25-page call); results are kept in memory, at most two files are read at once, and files are limited to 60 pages. To switch it off, set `OCR_UPLOADS = False` in `features.py`; to remove it entirely, delete `ocr.py` and `packages.txt` and the `read_scanned` lines in `views/analyze.py`.
+
+## Beyond the numbers (EPS surprise)
+
+`pipeline/eps_surprise.py` (run by the data update) fetches each call's consensus EPS estimate and reported EPS from Yahoo Finance (Bloomberg numbers can be added in the private repo's `eps_manual.csv`) and tests whether tone adds anything beyond the earnings surprise. `surprise_view.py` shows the result as section 04 of the Market reaction page and as Chapter 4 · Part 3 of the story. Switch: `SHOW_SURPRISE_TEST` in `features.py`.

@@ -35,3 +35,7 @@ SHOW_TONE_SURPRISE = True
 # Scanned PDFs uploaded on the Analyze page are read with text recognition (OCR, needs packages.txt).
 # Set to False to show the "no readable text" message instead.
 OCR_UPLOADS = False   # off for the demo: scans show a quick message instead of slowing the app
+
+# 'Beyond the numbers': EPS surprise vs. tone (Market reaction page section and a story chapter).
+# Needs data/eps_surprise.csv and data/surprise_test.json from pipeline/eps_surprise.py.
+SHOW_SURPRISE_TEST = True
