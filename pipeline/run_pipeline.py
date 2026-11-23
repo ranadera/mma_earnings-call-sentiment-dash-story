@@ -65,7 +65,7 @@ def balance_sectors(calls):
     return calls.drop(index=drop), calls.loc[drop]
 
 
-def score_all(root, data_dir, balance=False):
+def score_all(root, data_dir, balance=False, call_dates=None):
     lm = sc.load_lm(os.path.join(data_dir, 'LM_MasterDictionary.csv'))
     smap = sc.load_sector_map(os.path.join(data_dir, 'sector_map.csv'))
     lexicon = sc.load_sector_lexicon(os.path.join(data_dir, 'sector_lexicon.csv'))
@@ -76,6 +76,9 @@ def score_all(root, data_dir, balance=False):
         dataset = rel.split(os.sep)[0] if os.sep in rel else 'transcripts'
         raw = sc.read_text(f, open(f, 'rb').read())
         meta = sc.get_meta(raw)
+        if not meta['call_date'] and call_dates:
+            # transcripts that never state the call date (e.g. Alphabet's own): date from call_dates.csv, by file name
+            meta['call_date'] = call_dates.get(os.path.basename(f), '')
         if not meta['ticker'] or not meta['call_date']:
             print('Skipped (ticker or date not found):', rel)
             continue
@@ -266,10 +269,15 @@ def main():
     ap.add_argument('--no-prices', action='store_true')
     ap.add_argument('--balance-sectors', action='store_true',
                     help='Keep the same number of bank and tech calls (trims the larger sector; see balance_sectors)')
+    ap.add_argument('--call-dates', help='CSV with columns file,call_date (YYYY-MM-DD) for transcripts that do not state their date')
     ap.add_argument('--extra-prices', help='CSV of daily closing prices (date column, one column per ticker), e.g. from Bloomberg')
     args = ap.parse_args()
 
-    calls, segs = score_all(args.transcripts, args.out, balance=args.balance_sectors)
+    dates = {}
+    if args.call_dates and os.path.exists(args.call_dates):
+        cd = pd.read_csv(args.call_dates, dtype=str).dropna()
+        dates = dict(zip(cd['file'].str.strip(), cd['call_date'].str.strip()))
+    calls, segs = score_all(args.transcripts, args.out, balance=args.balance_sectors, call_dates=dates)
     calls.to_csv(os.path.join(args.out, 'call_sentiment.csv'), index=False)
     segs.to_csv(os.path.join(args.out, 'segment_tone.csv'), index=False)
     print(f'\n{len(calls)} calls scored:', calls.groupby(['dataset', 'sector']).size().to_dict())

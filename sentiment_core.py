@@ -152,7 +152,15 @@ def load_lm(path='LM_MasterDictionary.csv'):
 def read_text(uploaded_name, data):
     if uploaded_name.lower().endswith('.pdf'):
         import io
-        raw = '\n'.join(p.extract_text() or '' for p in PdfReader(io.BytesIO(data)).pages)
+        pages = PdfReader(io.BytesIO(data)).pages
+        raw = '\n'.join(p.extract_text() or '' for p in pages)
+        lines = [l for l in raw.split('\n') if l.strip()]
+        if lines and sum(len(l.split()) <= 1 for l in lines) > 0.6 * len(lines):
+            # some PDFs come out one word per line; the layout mode keeps the real lines
+            try:
+                raw = '\n'.join(p.extract_text(extraction_mode='layout') or '' for p in pages)
+            except Exception:
+                pass
     else:
         raw = data.decode('utf-8', errors='ignore')
     return unicodedata.normalize('NFKC', raw)
@@ -170,6 +178,13 @@ def get_meta(raw):
     if not meta['ticker'] and m:
         meta['ticker'] = m.group(4)
         meta['call_date'] = '20' + m.group(3) + '-' + m.group(1) + '-' + m.group(2)
+    head = [l.strip() for l in raw.strip().split('\n')[:8]]
+    if not meta['ticker'] and len(head) > 1 and head[0].endswith('(') and re.fullmatch(r'[A-Z][A-Z.]{0,5}', head[1]):
+        # Motley Fool layout: "Microsoft (" / "MSFT" / "+0.41%" / ")" / "Q1 2023 Earnings Call" / "Oct 25, 2022, 5:30 p.m. ET"
+        meta['ticker'], meta['company'] = head[1], head[0].rstrip('( ').strip()
+        d = re.search(r'Earnings Call\s*\n\s*([A-Z][a-z]{2,8})\.? (\d{1,2}), (\d{4})', raw[:600])
+        if d:
+            meta['call_date'] = pd.to_datetime(' '.join(d.groups())).strftime('%Y-%m-%d')
     if not meta['ticker']:
         # No ticker in the text (e.g. investor-relations transcripts): find the company name, then look up its ticker.
         lines = [l.strip() for l in raw.split('\n') if l.strip()]
@@ -179,6 +194,11 @@ def get_meta(raw):
         w = re.search(r"[Ww]elcome to (?:the )?(.{2,60}?)(?:'s|’s)?\s+(?:First|Second|Third|Fourth|Q[1-4]|Fiscal|Full[- ]Year|\d{4})", raw[:6000])
         if w:
             names.append(w.group(1))
+        w2 = re.search(r"\bfor the (.{2,40}?)\s+(?:First|Second|Third|Fourth)\s+Quarter", raw[:3000])
+        if w2:
+            names.append(w2.group(1))
+        if 'Earnings' in first or 'Quarter' in first:
+            names.append(first)   # e.g. "Microsoft FY23 Third Quarter Earnings Conference Call"
         for name in names:
             t = ticker_from_company(name) if name else ''
             if t:
@@ -189,6 +209,10 @@ def get_meta(raw):
         d = re.search(rf'({MONTHS})\s+(\d{{1,2}})(?:st|nd|rd|th)?,\s+(\d{{4}})', raw[:3000])
         if d:
             meta['call_date'] = pd.to_datetime(' '.join(d.groups())).strftime('%Y-%m-%d')
+    if not meta['call_date']:
+        d = re.search(r'\b(Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\.? (\d{1,2}), (\d{4})\b', raw[:3000])
+        if d:
+            meta['call_date'] = pd.to_datetime(f'{d.group(1)[:3]} {d.group(2)} {d.group(3)}').strftime('%Y-%m-%d')
     if meta['company']:
         meta['company'] = re.sub(r'\s+(first|second|third|fourth)\s+quarter.*$', '', meta['company'], flags=re.I).strip()
     return meta
@@ -279,7 +303,7 @@ END_RE = re.compile(r'^(Certain statements in this (transcript|document)|(Forwar
 
 def is_caps_labels(lines):
     labels = [m.group('name') for l in lines for m in [LABEL_RE.match(l)] if m]
-    return 'OPERATOR' in labels and len(set(labels)) >= 3 and len(labels) >= 8
+    return ('OPERATOR' in labels and len(set(labels)) >= 3 and len(labels) >= 8) or (len(set(labels)) >= 5 and len(labels) >= 12)
 
 
 def parse_caps_labels(lines):
@@ -290,6 +314,11 @@ def parse_caps_labels(lines):
     body = [l for l in lines if not (counts[l] >= 3 and len(l) < 100) and not l.lower().startswith('copyright')]
     first = next((i for i, l in enumerate(body) if LABEL_RE.match(l)), 0)
     mgmt = {re.split(r',', l)[0].strip().upper() for l in body[:first] if ',' in l and len(l.split(',')[0].split()) in (2, 3, 4)}
+    # a header line that is just a list of names ("Brett Iversen, Satya Nadella, Amy Hood") names every executive
+    listed = {n.strip().upper() for l in body[:first] if ',' in l and len(l) < 120
+              and all(2 <= len(n.split()) <= 4 and n.strip()[:1].isupper() for n in l.split(',')) for n in l.split(',')}
+    strict = len(listed) >= 2
+    mgmt |= listed
     out, section, speaker, role, buf, qa_started = [], 'presentation', None, None, [], False
 
     def flush():
@@ -307,7 +336,7 @@ def parse_caps_labels(lines):
                 speaker, role = 'Operator', 'operator'
             else:
                 asked = bool(out and out[-1][1] == 'Operator' and QUESTION_RE.search(out[-1][3]))
-                is_mgmt = name in mgmt or (not qa_started and not asked)
+                is_mgmt = name in mgmt or (not strict and not qa_started and not asked)
                 if not is_mgmt and not qa_started:
                     qa_started, section = True, 'qa'
                     if out and out[-1][1] == 'Operator':
@@ -367,6 +396,84 @@ def parse_name_labels(lines):
     return out
 
 
+MF_SPEAKER_RE = re.compile(r"^(?P<name>Operator|[A-Z][\w.'\u2019\-]+(?: [A-Z][\w.'\u2019\-]+){0,4})(?: -- (?P<title>.{2,120}))?$")
+
+
+def is_motley(lines):
+    return any(l.startswith('Prepared Remarks') for l in lines[:30]) and sum(' -- ' in l for l in lines) >= 5
+
+
+def parse_motley(lines):
+    """Motley Fool layout: 'Prepared Remarks:', 'Questions and Answers:', 'Call Participants:' sections; each turn starts
+    with a line 'Name -- Title' (analysts: 'Name -- Firm -- Analyst') or 'Operator'."""
+    out, section, speaker, role, buf, started = [], 'presentation', None, None, [], False
+
+    def flush():
+        if speaker and buf:
+            out.append([section, speaker, role, ' '.join(buf)])
+
+    for l in lines:
+        if l == 'Prepared Remarks:':      # the section heading (the contents list repeats the names without colons)
+            started = True; continue
+        if not started:
+            continue
+        if l in ('Questions and Answers:', 'Questions & Answers:'):
+            flush(); speaker, buf, section = None, [], 'qa'; continue
+        if l == 'Call Participants:':
+            break
+        m = MF_SPEAKER_RE.match(l) if (l == 'Operator' or ' -- ' in l) and len(l) < 140 else None
+        if m:
+            flush(); buf = []
+            title = m.group('title') or ''
+            speaker = m.group('name')
+            role = 'operator' if speaker == 'Operator' else 'analyst' if title.endswith('Analyst') else 'management'
+        elif speaker:
+            buf.append(l)
+    flush()
+    return out
+
+
+TITLED_RE = re.compile(r"^(?P<name>[A-Z][\w.'\u2019\-]+(?: [A-Z][\w.'\u2019\-]+){1,3}),\s*(?P<title>[^:]{2,90}):\s*(?P<text>.*)$")
+FIRM_RE = re.compile(r"^(?P<name>[A-Z][\w.'\u2019\-]+(?: [A-Z][\w.'\u2019\-]+){1,3})\s*\((?P<firm>[^)]{2,60})\):\s*(?P<text>.*)$")
+
+
+def is_titled_labels(lines):
+    t = sum(bool(TITLED_RE.match(l)) for l in lines)
+    return t >= 6 and any(l.startswith('Operator:') for l in lines)
+
+
+def parse_titled_labels(lines):
+    """Company transcripts such as Alphabet's: 'Name, Title: text' for executives, 'Name (Firm): text' for analysts,
+    'Operator: text'. The Q&A starts at the first analyst."""
+    out, section, speaker, role, buf = [], 'presentation', None, None, []
+
+    def flush():
+        if speaker and buf:
+            out.append([section, speaker, role, ' '.join(buf)])
+
+    for l in lines:
+        if END_RE.match(l):
+            break
+        if l.isdigit():
+            continue
+        t, f = TITLED_RE.match(l), FIRM_RE.match(l)
+        if l.startswith('Operator:'):
+            flush(); speaker, role, buf = 'Operator', 'operator', [l[9:].strip()]
+        elif f:
+            flush()
+            if section == 'presentation':
+                section = 'qa'
+                if out and out[-1][1] == 'Operator':
+                    out[-1][0] = 'qa'
+            speaker, role, buf = f.group('name'), 'analyst', [f.group('text')]
+        elif t:
+            flush(); speaker, role, buf = t.group('name'), 'management', [t.group('text')]
+        elif speaker:
+            buf.append(l)
+    flush()
+    return out
+
+
 def parse(raw):
     lines = clean_lines(raw)
     if 'CORPORATE SPEAKERS:' in lines and 'PRESENTATION:' in lines:
@@ -379,6 +486,10 @@ def parse(raw):
         fmt, rows = 'Investor-relations (CallStreet layout)', parse_callstreet(lines)
     elif is_caps_labels(lines) and parse_caps_labels(lines):
         fmt, rows = 'Investor-relations (named speakers)', parse_caps_labels(lines)
+    elif is_motley(lines) and parse_motley(lines):
+        fmt, rows = 'Motley Fool layout', parse_motley(lines)
+    elif is_titled_labels(lines) and parse_titled_labels(lines):
+        fmt, rows = 'Investor-relations (name, title: text)', parse_titled_labels(lines)
     elif is_name_labels(lines) and parse_name_labels(lines):
         fmt, rows = 'Investor-relations (name: text)', parse_name_labels(lines)
     else:
