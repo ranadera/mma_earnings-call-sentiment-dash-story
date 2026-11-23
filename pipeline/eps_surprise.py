@@ -156,11 +156,13 @@ def main():
     yahoo['eps_date'] = pd.to_datetime(yahoo['eps_date'])
     print(f'Yahoo Finance: {len(yahoo)} earnings dates for {yahoo["ticker"].nunique()} companies.')
     eps = match(calls, yahoo)
-    if args.manual and os.path.exists(args.manual):
-        man = pd.read_csv(args.manual).dropna(subset=['eps_estimate', 'eps_actual'])
-        man['call_date'] = pd.to_datetime(man['call_date'])
-        man['call_id'] = man['ticker'].str.upper() + '_' + man['call_date'].dt.strftime('%Y-%m-%d')
-        man['source'] = man['source'] if 'source' in man else 'Manual'
+    man = pd.read_csv(args.manual, dtype=str) if args.manual and os.path.exists(args.manual) else pd.DataFrame()
+    if len(man):
+        man = man.dropna(subset=['ticker', 'call_date', 'eps_estimate', 'eps_actual']).copy()
+        man['call_id'] = man['ticker'].str.strip().str.upper() + '_' + pd.to_datetime(man['call_date'].str.strip()).dt.strftime('%Y-%m-%d')
+        man['eps_estimate'] = pd.to_numeric(man['eps_estimate'], errors='coerce')
+        man['eps_actual'] = pd.to_numeric(man['eps_actual'], errors='coerce')
+        man['source'] = man['source'].fillna('Manual') if 'source' in man else 'Manual'
         eps = pd.concat([eps[~eps['call_id'].isin(man['call_id'])], man[['call_id', 'eps_estimate', 'eps_actual', 'source']]])
         print(f'{len(man)} EPS values from {args.manual}')
     eps = calls[['call_id', 'ticker', 'call_date']].merge(eps, on='call_id', how='left')
