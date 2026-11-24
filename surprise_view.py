@@ -175,17 +175,20 @@ def story_chapter(chapter, so_what):
 
 
 def headline():
-    """One sentence for the top of the story page, or None."""
+    """(title, sentence) for the top of the story page, or None. The title follows the result."""
     res, eps = load()
     if res is None:
         return None
-    drift = _best(res, 'car_drift')
+    n, beats = res['calls_with_surprise'], res['beats']
+    day, drift = _best(res, 'car_day'), _best(res, 'car_drift')
+    first = (f"Beating the analysts' estimate ({beats} of {n} calls beat) explained only {day['r2_s']:.0%} of the two-day move"
+             if day else f"{beats} of {n} calls beat the analysts' estimate")
     if drift and drift['p'] < 0.05 and drift['coef'] > 0:
-        return (f"Beating the estimate explained little of the first reaction ({res['beats']} of {res['calls_with_surprise']} calls beat). "
-                f"But in the month after the call, a company sounding more upbeat than its usual self predicted a better stock "
-                f"move, even holding the earnings surprise fixed (p-value {drift['p']:.3f}). The words carry information the numbers do not.")
-    return (f"Beating the estimate explained little of the first reaction ({res['beats']} of {res['calls_with_surprise']} calls beat), "
-            'and tone added little beyond it.')
+        return ('But the words do carry information.',
+                f"{first}. In the month after the call, a company sounding more upbeat than its usual self predicted a better "
+                f"stock move, even holding the earnings surprise fixed (p-value {drift['p']:.3f}). The words carry information "
+                'the numbers do not.')
+    return ('The numbers explain little, and tone adds little beyond them.', f'{first}, and tone added little beyond it.')
 
 
 def scatter():

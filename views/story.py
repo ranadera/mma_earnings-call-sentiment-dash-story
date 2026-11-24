@@ -119,7 +119,7 @@ if getattr(features, 'SHOW_SURPRISE_TEST', False):
     _beat = surprise_view.headline()
     if _beat:
         st.markdown(f'<div class="qs-answer" style="border-color:{ui.OLIVE}"><div class="k">BEYOND THE BEAT</div>'
-                    f'<div class="a">But the words do carry information.</div><p>{_beat}</p></div>', unsafe_allow_html=True)
+                    f'<div class="a">{esc(_beat[0])}</div><p>{_beat[1]}</p></div>', unsafe_allow_html=True)
         surprise_view.link('See the test: Beyond the Beat')
 
 st.markdown('<div class="qs-chapters">' + ''.join(f'<a href="#{a}" target="_self"><b>{i}</b>{t}</a>' for i, (a, t) in enumerate([
