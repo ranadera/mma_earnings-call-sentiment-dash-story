@@ -1,6 +1,7 @@
 {
   "status": "ok",
   "train_years": [
+    2022,
     2023
   ],
   "test_year": 2024,
@@ -11,46 +12,46 @@
     "car_day": {
       "label": "Reaction: beats the market over days 0 to +1",
       "status": "ok",
-      "n_train": 33,
-      "n_test": 39,
-      "accuracy": 0.48717948717948717,
-      "baseline_accuracy": 0.5757575757575758,
-      "auc": 0.5921052631578947,
-      "long_short": 0.007540391144529517,
+      "n_train": 42,
+      "n_test": 41,
+      "accuracy": 0.5365853658536586,
+      "baseline_accuracy": 0.5952380952380952,
+      "auc": 0.5738095238095238,
+      "long_short": 1.4634492117270026e-06,
       "coefficients": {
-        "lm_tone": 0.3484686437933073,
-        "lm_tone_sector": 0.20589906893926618,
-        "composite": -0.1882923979566325,
-        "tone_shift": 0.34077509213879026,
-        "conviction_score": -1.089222177518768,
-        "analyst_neg_rate": 0.11762908562195162,
-        "hedging": 0.11666103144397418
+        "lm_tone": 0.29013662024265163,
+        "lm_tone_sector": 0.017982352819521208,
+        "composite": -0.011012095109406409,
+        "tone_shift": 0.47005389379571966,
+        "conviction_score": -1.0803222381446347,
+        "analyst_neg_rate": 0.253376821430637,
+        "hedging": 0.25166012189715187
       },
-      "later_accuracy": 0.375,
-      "n_later": 8
+      "later_accuracy": 0.4444444444444444,
+      "n_later": 9
     },
     "car_drift": {
       "label": "Drift: beats the market from day +2 to +21 (tradable after the call)",
       "status": "ok",
-      "n_train": 33,
-      "n_test": 39,
-      "accuracy": 0.5384615384615384,
-      "baseline_accuracy": 0.5454545454545454,
-      "auc": 0.5132275132275133,
-      "long_short": -0.022103137445290588,
+      "n_train": 42,
+      "n_test": 41,
+      "accuracy": 0.5365853658536586,
+      "baseline_accuracy": 0.5476190476190477,
+      "auc": 0.5023923444976076,
+      "long_short": -0.017522783537390865,
       "coefficients": {
-        "lm_tone": 0.22571804624594816,
-        "lm_tone_sector": -0.016490391880938572,
-        "composite": 0.7041424669200945,
-        "tone_shift": 0.3403841347358883,
-        "conviction_score": -0.18349009869012237,
-        "analyst_neg_rate": -0.27666711635486374,
-        "hedging": 0.020226326998351377
+        "lm_tone": 0.3530626604369125,
+        "lm_tone_sector": -0.01816746857441716,
+        "composite": 0.39650525634571815,
+        "tone_shift": 0.08330614923133035,
+        "conviction_score": 0.22883737283028766,
+        "analyst_neg_rate": -0.3977418581713565,
+        "hedging": -0.04719159656378816
       },
-      "later_accuracy": 0.5,
-      "n_later": 8
+      "later_accuracy": 0.4444444444444444,
+      "n_later": 9
     }
   },
-  "updated": "2026-11-23 20:08 UTC",
-  "calls": 80
+  "updated": "2026-11-24 14:41 UTC",
+  "calls": 92
 }
